@@ -1,0 +1,1029 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+<title>Simulation & Validation for Medical Physical AI</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: an engineering brief. Sticky section rail on the left (desktop), one reading column,
+   wide modules (market map, model) break out to the full content width. Placeholders are amber "spec gaps". */
+:root {
+  --bg: #F3F6F6;
+  --surface: #FFFFFF;
+  --ink: #14202A;
+  --muted: #576672;
+  --line: #D3DCDF;
+  --accent: #1D6B60;
+  --accent-soft: #DDEDE9;
+  --j2: #2F4F8F;
+  --j2-soft: #E2E8F5;
+  --gap: #A85A0C;
+  --gap-soft: #FBF1E3;
+  --warn: #9A3B2E;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E151A; --surface: #152027; --ink: #E4EBED; --muted: #9AA9B2; --line: #283640;
+    --accent: #5DC0AE; --accent-soft: #17332E; --j2: #93AEEA; --j2-soft: #1B2740;
+    --gap: #EAA65C; --gap-soft: #32250F; --warn: #E58A7C; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E151A; --surface: #152027; --ink: #E4EBED; --muted: #9AA9B2; --line: #283640;
+  --accent: #5DC0AE; --accent-soft: #17332E; --j2: #93AEEA; --j2-soft: #1B2740;
+  --gap: #EAA65C; --gap-soft: #32250F; --warn: #E58A7C; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.6; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--surface); }
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.15; margin: 0; }
+p { margin: 0; }
+.mono { font-family: var(--mono); }
+.num { font-variant-numeric: tabular-nums; }
+
+/* Top bar */
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--surface); border-bottom: 1px solid var(--line); }
+.topbar-in { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 1240px; margin: 0 auto; padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.brand { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.brand b { color: var(--ink); font-weight: 500; }
+.gap-toggle { display: inline-flex; align-items: center; gap: 8px; font: 500 13px var(--body); color: var(--gap); background: var(--gap-soft); border: 1px dashed var(--gap); border-radius: 999px; padding: 5px 12px; cursor: pointer; white-space: nowrap; }
+.gap-toggle[aria-pressed="false"] { color: var(--muted); background: transparent; border-color: var(--line); }
+.progress { height: 2px; background: var(--accent); width: 0; }
+
+/* Shell */
+.shell { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 48px; max-width: 1240px; margin: 0 auto; padding-block: 40px 96px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.rail { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 72px); align-self: start; display: flex; flex-direction: column; gap: 2px; }
+.rail a { display: grid; grid-template-columns: 28px 1fr; gap: 6px; font-size: 13px; color: var(--muted); text-decoration: none; padding: 6px 8px; border-radius: var(--r); border-left: 2px solid transparent; }
+.rail a span:first-child { font-family: var(--mono); font-size: 11px; padding-top: 2px; }
+.rail a.on { color: var(--ink); background: var(--surface); border-left-color: var(--accent); }
+.rail a .rg { color: var(--gap); font-family: var(--mono); font-size: 11px; margin-left: 4px; }
+body.no-gaps .rail a .rg { display: none; }
+main { min-width: 0; display: flex; flex-direction: column; gap: 88px; }
+@media (max-width: 900px) { .shell { grid-template-columns: minmax(0, 1fr); gap: 0; padding-block: 24px 72px; } .rail { display: none; } main { gap: 64px; } }
+
+section { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.read { max-width: 68ch; display: flex; flex-direction: column; gap: 16px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h2 { font-size: clamp(28px, 4vw, 38px); font-weight: 600; letter-spacing: -.01em; }
+h3 { font-size: 20px; font-weight: 600; }
+.lede { font-size: 18px; color: var(--ink); }
+.muted { color: var(--muted); }
+.small { font-size: 14px; }
+.cap { font-size: 13px; color: var(--muted); }
+
+/* Gap blocks */
+.gap { border: 1px dashed var(--gap); background: var(--gap-soft); border-radius: var(--r); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.gap-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.gap-tag { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--gap); border: 1px solid var(--gap); border-radius: 3px; padding: 0 6px; }
+.gap-title { font-weight: 600; color: var(--ink); }
+.gap ul { margin: 0; padding-left: 18px; }
+.ph { background: var(--gap-soft); color: var(--gap); border-bottom: 1px dashed var(--gap); padding: 0 3px; border-radius: 2px; font-weight: 500; }
+body.no-gaps .gap { display: none; }
+body.no-gaps .ph { background: none; color: inherit; border-bottom: 0; padding: 0; font-weight: inherit; }
+
+/* Hero */
+.hero { gap: 20px; }
+.hero h1 { font-size: clamp(34px, 5.6vw, 56px); font-weight: 600; letter-spacing: -.02em; max-width: 20ch; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.thesis { font-size: clamp(19px, 2.2vw, 22px); max-width: 60ch; line-height: 1.5; }
+.thesis .hl, .lede .hl { font-weight: 600; color: var(--accent); }
+.byline { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: var(--mono); font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.byline .byname { flex-basis: 100%; font-family: var(--display); font-size: 20px; font-weight: 600; color: var(--ink); text-transform: none; letter-spacing: 0; }
+.status { border: 1px solid var(--line); background: var(--surface); border-radius: var(--r); }
+.status summary { cursor: pointer; padding: 14px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-weight: 500; list-style: none; }
+.status summary::-webkit-details-marker { display: none; }
+.status summary::after { content: "Show list"; margin-left: auto; font-size: 13px; color: var(--muted); }
+.status[open] summary::after { content: "Hide list"; }
+.status .count { font-family: var(--mono); color: var(--gap); }
+.kinds { display: flex; flex-wrap: wrap; gap: 6px; }
+.kinds span { font-family: var(--mono); font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 0 6px; }
+.checklist { list-style: none; margin: 0; padding: 0 16px 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 8px 24px; }
+.checklist li { display: grid; grid-template-columns: 20px 1fr; gap: 8px; font-size: 14px; align-items: start; }
+.checklist input { margin-top: 4px; accent-color: var(--accent); }
+.checklist a { color: var(--ink); text-decoration: none; }
+.checklist a:hover { text-decoration: underline; }
+.checklist small { display: block; color: var(--muted); font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+.checklist li.done a { color: var(--muted); text-decoration: line-through; }
+body.no-gaps .status { display: none; }
+
+/* Timeline */
+.timeline { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0; border-top: 2px solid var(--ink); }
+.timeline li { padding: 14px 16px 6px 0; position: relative; display: flex; flex-direction: column; gap: 6px; }
+.timeline li::before { content: ""; position: absolute; top: -7px; left: 0; width: 12px; height: 12px; border-radius: 50%; background: var(--bg); border: 2px solid var(--ink); }
+.timeline li.fut::before { border-style: dashed; }
+.timeline li.j2::before { background: var(--j2); border-color: var(--j2); }
+.timeline .when { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.timeline .what { font-size: 14px; line-height: 1.45; }
+@media (max-width: 760px) { .timeline { grid-template-columns: 1fr; border-top: 0; border-left: 2px solid var(--ink); } .timeline li { padding: 0 0 18px 20px; } .timeline li::before { top: 4px; left: -7px; } }
+
+/* Quotes */
+.quotes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.quote { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.quote blockquote { margin: 0; font-size: 16px; line-height: 1.5; }
+.quote blockquote::before { content: "\201C"; font-family: var(--display); font-size: 36px; line-height: 0; color: var(--accent); margin-right: 2px; vertical-align: -12px; }
+.quote footer { font-size: 13px; color: var(--muted); margin-top: auto; }
+.quote footer b { color: var(--ink); font-weight: 600; }
+
+/* Market map */
+.mapbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chipbtn { font: 500 13px var(--body); padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.chipbtn[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.map { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+@media (max-width: 1040px) { .map { grid-template-columns: minmax(0, 1fr); } }
+.layers { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); overflow: hidden; }
+.layer { display: grid; grid-template-columns: 190px minmax(0, 1fr); border-top: 1px solid var(--line); }
+.layer:first-child { border-top: 0; }
+.layer-name { padding: 14px 16px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; }
+.layer-name b { font-family: var(--display); font-size: 16px; font-weight: 600; }
+.layer-name span { font-size: 12px; color: var(--muted); line-height: 1.4; }
+.layer-cos { padding: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
+@media (max-width: 620px) { .layer { grid-template-columns: minmax(0, 1fr); } .layer-name { border-right: 0; border-bottom: 1px solid var(--line); } }
+.co { font: 500 13px var(--body); padding: 6px 10px; border-radius: var(--r); border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: opacity .15s; }
+.co i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--muted); }
+.co.t-j2 { border-color: var(--j2); background: var(--j2-soft); }
+.co.t-j2 i { background: var(--j2); }
+.co.t-short i { background: var(--accent); }
+.co.t-watch i { background: transparent; border: 1.5px solid var(--accent); }
+.co.t-comp i { background: var(--warn); }
+.co.t-inc i { background: var(--ink); border-radius: 2px; }
+.exits { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.exits ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.co.dim { opacity: .28; }
+.co[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: 1px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.detail { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: flex; flex-direction: column; gap: 10px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 72px); min-width: 0; }
+.detail .k { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.detail h3 { font-size: 22px; }
+.pill { display: inline-block; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; padding: 1px 8px; border-radius: 3px; border: 1px solid currentColor; }
+
+/* Cards and columns */
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.card h3 { font-size: 18px; }
+.card p { font-size: 15px; }
+.stat { font-family: var(--display); font-size: 34px; font-weight: 600; line-height: 1; }
+
+/* Flow diagram */
+.flow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; align-items: stretch; }
+.step { position: relative; background: var(--surface); border: 1px solid var(--line); padding: 14px 14px 14px 18px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.step + .step { border-left: 0; }
+.step:first-child { border-radius: var(--r) 0 0 var(--r); }
+.step:last-child { border-radius: 0 var(--r) var(--r) 0; background: var(--accent-soft); }
+.step .n { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: .06em; }
+.step b { font-family: var(--display); font-size: 16px; font-weight: 600; line-height: 1.2; }
+.step span { font-size: 13px; color: var(--muted); line-height: 1.4; }
+.step:not(:last-child)::after { content: ""; position: absolute; right: -8px; top: 50%; width: 14px; height: 14px; background: var(--surface); border-top: 1px solid var(--line); border-right: 1px solid var(--line); transform: translateY(-50%) rotate(45deg); z-index: 1; }
+@media (max-width: 760px) { .flow { grid-template-columns: minmax(0, 1fr); } .step + .step { border-left: 1px solid var(--line); border-top: 0; } .step:first-child { border-radius: var(--r) var(--r) 0 0; } .step:last-child { border-radius: 0 0 var(--r) var(--r); } .step:not(:last-child)::after { right: auto; left: 24px; top: auto; bottom: -8px; transform: rotate(135deg); } }
+
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+.facts div { padding: 12px 14px; border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; }
+.facts div:last-child { border-right: 0; }
+.facts .k { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.facts .v { font-size: 15px; font-weight: 500; }
+
+.case { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.case ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; }
+.case .card.bull { border-top: 3px solid var(--accent); }
+.case .card.bear { border-top: 3px solid var(--warn); }
+
+.qlist { counter-reset: q; list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.qlist li { counter-increment: q; display: grid; grid-template-columns: 34px 1fr; gap: 8px; font-size: 15px; }
+.qlist li::before { content: "Q" counter(q); font-family: var(--mono); font-size: 12px; color: var(--accent); padding-top: 3px; }
+
+/* Model */
+.model { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 860px) { .model { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.panel h3 { font-size: 18px; }
+.slider { display: flex; flex-direction: column; gap: 4px; }
+.slider label { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; }
+.slider output { font-family: var(--mono); font-size: 13px; color: var(--ink); white-space: nowrap; }
+.slider .src { font-size: 12px; color: var(--gap); }
+body.no-gaps .slider .src { display: none; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.result { border-top: 1px solid var(--line); padding-top: 12px; display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; font-size: 14px; align-items: baseline; }
+.result b { font-family: var(--mono); font-weight: 500; font-size: 15px; text-align: right; }
+.result .big { font-family: var(--display); font-size: 26px; font-weight: 600; }
+.meter { height: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .25s; }
+.meter.over i { background: var(--warn); }
+.readout { font-size: 15px; background: var(--accent-soft); border-radius: var(--r); padding: 12px 14px; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 500; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+
+/* Shortlist */
+.picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.pick { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.pick .score { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+.pick h3 { font-size: 17px; }
+.pick p { font-size: 14px; }
+.pick .link { font-size: 13px; color: var(--muted); }
+.pick .link b { color: var(--accent); font-weight: 600; }
+.pick .meta { font-size: 12px; color: var(--muted); margin-top: auto; }
+
+/* About */
+.about { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+
+.sources { font-size: 13px; color: var(--muted); }
+.sources ol { margin: 8px 0 0; padding-left: 20px; columns: 2 320px; column-gap: 32px; }
+.sources li { break-inside: avoid; margin-bottom: 4px; }
+.evidence { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.ev { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: var(--r); padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; margin: 0; }
+.ev.counter { border-left-color: var(--warn); }
+.ev .tag { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.ev blockquote { margin: 0; font-size: 15px; line-height: 1.5; }
+.ev footer { font-size: 13px; color: var(--muted); margin-top: auto; }
+.ev footer b { color: var(--ink); font-weight: 600; }
+.phase { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+@media (max-width: 700px) { .phase { grid-template-columns: minmax(0, 1fr); gap: 12px; } }
+.phase-h { display: flex; flex-direction: column; gap: 4px; }
+.phase-h .when { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: .06em; text-transform: uppercase; }
+.phase-h b { font-family: var(--display); font-size: 20px; font-weight: 600; line-height: 1.2; }
+.stepbody { display: flex; flex-direction: column; gap: 10px; font-size: 15px; min-width: 0; }
+.stepbody b { font-weight: 600; }
+.examples { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--ink); }
+.examples::before { content: "Examples"; display: block; margin-left: -18px; margin-bottom: 2px; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.advantage { border-left: 3px solid var(--j2); gap: 14px; }
+.adv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+.adv { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.adv-k { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.adv b { font-family: var(--display); font-size: 18px; font-weight: 600; line-height: 1.2; }
+.adv p { font-size: 14px; }
+.advantage .eyebrow { color: var(--j2); }
+.people { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+.person { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; font-size: 14px; }
+.person b { font-size: 15px; }
+.person .role { color: var(--muted); font-size: 13px; }
+.person .ask { margin-top: 4px; }
+.person .ask::before { content: "Ask: "; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); }
+.deliver { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 15px; }
+.deliver li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; }
+.deliver li::before { content: "\2192"; color: var(--accent); font-family: var(--mono); }
+.barriers { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.barrier { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.barrier.open { border: 1px solid var(--gap); background: var(--gap-soft); }
+.status-pill { align-self: flex-start; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 3px; color: var(--accent); border: 1px solid var(--accent); }
+.barrier.open .status-pill { color: var(--gap); border-color: var(--gap); }
+.barrier h3 { font-size: 18px; }
+.barrier ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+@media (max-width: 640px) { .gapgrid { grid-template-columns: minmax(0, 1fr) !important; } }
+.gapgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); overflow: hidden; }
+.gapitem { padding: 18px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; min-width: 0; margin: 0 -1px -1px 0; }
+.gapitem .k { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--gap); }
+.gapitem h3 { font-size: 17px; }
+.gapitem p { font-size: 14px; }
+.capcompare { display: flex; flex-direction: column; gap: 10px; }
+.caprow { display: grid; grid-template-columns: minmax(0, 1fr) 72px; gap: 12px; align-items: center; font-size: 13px; }
+.caprow .lbl { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.caprow .bar { height: 14px; border-radius: 3px; background: var(--muted); min-width: 3px; }
+.caprow.med .bar { background: var(--j2); }
+.caprow .amt { font-family: var(--mono); font-size: 13px; text-align: right; }
+.proofs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 720px) { .proofs { grid-template-columns: minmax(0, 1fr); } }
+.proof { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.proof-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; }
+.proof h3 { font-size: 19px; }
+.proof .lab { font-family: var(--mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.proof .lab.il { color: var(--j2); }
+.proof ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.proof dl { margin: 0; display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 4px 10px; font-size: 13px; border-top: 1px solid var(--line); padding-top: 10px; }
+.proof dt { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding-top: 2px; }
+.proof dd { margin: 0; }
+.proof .why { font-size: 14px; background: var(--accent-soft); border-radius: var(--r); padding: 10px 12px; }
+.proof .src { font-size: 12px; color: var(--muted); margin-top: auto; }
+.milestones { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.milestone { border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; background: var(--bg); min-width: 0; font-size: 14px; }
+.milestone b { font-size: 15px; }
+.milestone .cap a { color: var(--muted); }
+.tam { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+.tam-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding-top: 14px; border-top: 1px solid var(--line); }
+.tam-row:first-child { border-top: 0; padding-top: 0; }
+.tam-label { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tam-label .k { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; color: var(--accent); }
+.tam-label b { font-family: var(--display); font-size: 19px; font-weight: 600; }
+.tam-fig { font-family: var(--display); font-size: 30px; font-weight: 600; text-align: right; }
+.tam-fig.small { font-size: 14px; font-family: var(--body); font-weight: 400; }
+.stack { display: flex; height: 40px; border-radius: var(--r); overflow: hidden; border: 1px solid var(--line); }
+.seg { display: flex; align-items: center; padding: 0 10px; font-size: 12px; font-family: var(--mono); white-space: nowrap; overflow: hidden; min-width: 0; }
+.seg.phys { background: var(--bg); color: var(--muted); }
+.seg.sim { background: var(--accent); color: var(--surface); }
+.outlook { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+.outlook .ol { grid-column: span 2; }
+.outlook .ol.mine { grid-column: span 3; }
+@media (max-width: 860px) { .outlook { grid-template-columns: minmax(0, 1fr); } .outlook .ol, .outlook .ol.mine { grid-column: auto; } }
+.ol { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ol.mine { border-color: var(--accent); background: var(--accent-soft); }
+.ol .k { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.ol.mine .k { color: var(--accent); }
+.ol h3 { font-size: 17px; }
+.ol p { font-size: 14px; }
+@media (max-width: 520px) { .seg span { font-size: 10px; } .tam-fig { font-size: 24px; } }
+sup.ref { font-size: .55em; font-family: var(--mono); vertical-align: super; margin-left: 1px; line-height: 0; }
+sup.ref a { text-decoration: none; color: var(--accent); }
+.calc td { font-size: 13px; }
+.calc td:first-child { font-family: var(--mono); color: var(--accent); }
+.calc tr:target td { background: var(--accent-soft); }
+.calc sup { font-size: .7em; }
+.mchart { gap: 12px; }
+.mrow { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 12px; align-items: center; }
+@media (max-width: 620px) { .mrow { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+.mlab { font-size: 14px; font-weight: 500; }
+.mbars { display: grid; grid-template-columns: minmax(0, 1fr) 110px; gap: 4px 10px; align-items: center; }
+.mbar { height: 12px; border-radius: 2px; min-width: 3px; }
+.mbar.now { background: var(--accent); }
+.mbar.fut { background: var(--accent-soft); border: 1px solid var(--accent); }
+.mval { font-family: var(--mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+.mlegend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; }
+.mlegend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.mlegend i.now { background: var(--accent); }
+.mlegend i.fut { background: var(--accent-soft); border: 1px solid var(--accent); }
+footer.end { border-top: 1px solid var(--line); padding-top: 20px; font-size: 13px; color: var(--muted); }
+</style>
+
+<div class="topbar">
+  <div class="topbar-in">
+    <div class="brand"><b>Simulation &amp; Validation for Medical Physical AI</b> · Deep dive for J2 Ventures · Jessie Lin</div>
+  </div>
+  <div class="progress" id="progress"></div>
+</div>
+
+<div class="shell">
+  <nav class="rail" id="rail" aria-label="Sections">
+    <a href="#thesis"><span>00</span><span>Thesis</span></a>
+    <a href="#why-now"><span>01</span><span>Why now</span></a>
+    <a href="#map"><span>02</span><span>Market map</span></a>
+    <a href="#medtech"><span>03</span><span>Why medtech is hard</span></a>
+    <a href="#inner-logic"><span>04</span><span>Inner Logic</span></a>
+    <a href="#model"><span>05</span><span>Market size</span></a>
+    <a href="#sourcing"><span>06</span><span>Where to invest next</span></a>
+    <a href="#next-steps"><span>07</span><span>Next steps</span></a>
+  </nav>
+
+  <main>
+    <!-- 00 THESIS -->
+    <section class="hero" id="thesis" data-sec>
+      <div class="eyebrow">Deep Dive Prepared for J2 Ventures · November 2026</div>
+      <h1>The future of medical physical AI is gated by <em>simulation and validation</em>, not proof of concept</h1>
+      <p class="thesis">Current trends in AI optimization of analytics and workflow will quickly evolve to physical processes in the next decade. Robotic systems have proven to effectively run and refine laboratory procedures, and they will progress to assist clinicians in critical settings. I see the primary bottleneck in <strong class="hl">simulation training and validation</strong>, and that is where <strong class="hl">J2's dual-use thesis</strong> complements the battlefield care data needed to establish trust in autonomous medical care. My thesis points to <strong class="hl">Inner Logic</strong>, a J2 portfolio company, and a handful of companies that J2 can consider.</p>
+      <div class="byline">
+        <span class="byname">Jessie Lin</span><span>Double Majoring in Biological Engineering and Finance</span><span>MIT Class of 2028</span><a href="mailto:jessjlin@mit.edu">JESSJLIN@MIT.EDU</a><a href="https://linkedin.com/in/jessiejlin" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+    </section>
+
+    <!-- 01 WHY NOW -->
+    <section id="why-now" data-sec>
+      <div class="read">
+        <div class="eyebrow">01 · Why now</div>
+        <h2>Proof of concept is no longer the barrier, and validation has the early tailwinds to invest in and scale</h2>
+        <p class="lede">Robots have now carried out surgical steps on their own, autonomous devices are reaching the FDA, and the government is paying for autonomous medtech directly. What is missing is the layer that proves these systems are safe across thousands of patients: <strong class="hl">simulation and data</strong>.</p>
+      </div>
+      <ol class="timeline">
+        <li><span class="when">Jul 2025</span><span class="what">Johns Hopkins robot performs a long phase of a gallbladder removal without human help, after learning from surgery videos.</span></li>
+        <li><span class="when">Sep 2025</span><span class="what">DARPA opens MASH: about $32M for autonomous systems that stop internal bleeding.</span></li>
+        <li><span class="when">Nov 2025</span><span class="what">Physical Intelligence raises $600M for general-purpose robot AI.</span></li>
+        <li class="j2"><span class="when">Jul 2026</span><span class="what">Inner Logic raises an $11.5M seed (General Catalyst, Bison; J2 participates).</span></li>
+        <li><span class="when">Aug 2026</span><span class="what">ARPA-H commits up to $175.3M to autonomous stroke intervention (AIR).</span></li>
+        <li class="fut"><span class="when">Mar 2027</span><span class="what">DARPA Surgical Competition finals: up to 10 teams, $3.5M in prizes.</span></li>
+      </ol>
+      <p class="cap">Filled dot: a J2 portfolio event. Dashed dot: scheduled.</p>
+
+      <div class="barriers">
+        <div class="barrier"><span class="status-pill">Cleared</span><h3>Proof of concept</h3>
+          <ul>
+            <li>A Johns Hopkins robot trained on surgery videos performed a gallbladder-removal phase on a realistic patient with 100% accuracy.</li>
+            <li>The FDA has cleared Parallel Robotics' handheld needle driver and Revolve Surgical's table-mounted robot (March 2026), and granted AutonomUS's AI-guided vascular-access device Breakthrough designation.</li>
+            <li>Inner Logic's team trained orthopedic trauma AI entirely in simulation, then ran it on real hardware.</li>
+          </ul>
+        </div>
+        <div class="barrier"><span class="status-pill">Funded</span><h3>Government demand</h3>
+          <ul>
+            <li>ARPA-H: up to $175.3M over five years for autonomous stroke intervention (AIR).</li>
+            <li>DARPA: about $32.4M for autonomous systems that stop internal bleeding (MASH), plus a $3.5M surgical robotics competition.</li>
+            <li>Defense Health Agency: funded AI-GUIDE from idea to startup in three years.</li>
+          </ul>
+        </div>
+        <div class="barrier open"><span class="status-pill">The gap</span><h3>Validation at scale</h3>
+          <ul>
+            <li>There is no accepted way yet to show an autonomous system is safe across the full range of patients, anatomy and failure cases.</li>
+            <li>That is the work simulation and data infrastructure does, and it is where the least capital has gone.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div>
+        <h3 style="margin-bottom:12px">Why the simulation and data layer is the gap</h3>
+        <div class="gapgrid">
+          <div class="gapitem"><span class="k">Coverage</span><h3>Physical testing can't reach the edge cases</h3><p>Cadaver and animal labs are expensive and cover a narrow range of anatomy. Autonomy has to be tested against variations in anatomy, imaging and failure scenarios that are hard to reproduce physically. Only simulation can generate them at scale.</p></div>
+          <div class="gapitem"><span class="k">Data</span><h3>Operating-room data is mostly uncaptured</h3><p>Surgical video is rarely turned into structured data. Uncovr, one of the first companies trying, analyzed thousands of hours across 400+ operating rooms and found missed billable steps in 16% of procedures, a sign of how little of the OR is recorded accurately today.</p></div>
+          <div class="gapitem"><span class="k">Rules</span><h3>The standard for simulation evidence is new</h3><p>The FDA issued final guidance on computational modeling in November 2023. In MDIC's most recent industry survey (2022, about 40 device makers), 61% named uncertain regulatory expectations as the biggest barrier, and a 2025 review of 72 studies still lists regulatory fragmentation and limited data access as the main obstacles.</p></div>
+          <div class="gapitem"><span class="k">Capital</span><h3>Money has gone to robots and robot brains</h3><p>Investors have funded general-purpose robot AI at large scale, while medical validation startups are still at seed or Series A. Even ARPA-H is paying to build its own simulation testbed for the robots it funds.</p></div>
+        </div>
+      </div>
+      <div class="quotes">
+        <figure class="quote"><blockquote>Surgery is on the same path as autonomous driving, which became real once the industry built the simulation and data systems to show a car could drive itself.</blockquote><footer><b>Tito Porras</b>, CEO, Inner Logic · <a href="https://www.citybiz.co/article/878109/inner-logic-raises-11-5m-to-build-testing-platform-for-surgical-devices/" target="_blank" rel="noopener">Citybiz</a></footer></figure>
+        <figure class="quote"><blockquote>We are not trying to replace surgeons; we are building them a highly skilled partner.</blockquote><footer><b>Jeremy C. Pamplin</b>, DARPA program manager · <a href="https://thedebrief.org/darpa-is-about-to-test-robotic-surgeons-that-could-soon-help-save-lives-on-the-battlefield/" target="_blank" rel="noopener">The Debrief</a></footer></figure>
+        <figure class="quote"><blockquote>This advancement moves us from robots that can execute specific surgical tasks to robots that truly understand surgical procedures.</blockquote><footer><b>Axel Krieger</b>, Johns Hopkins; co-founder, Inner Logic · <a href="https://hub.jhu.edu/2025/07/09/robot-performs-first-realistic-surgery-without-human-help" target="_blank" rel="noopener">JHU Hub</a></footer></figure>
+      </div>
+    </section>
+
+    <!-- 02 MARKET MAP -->
+    <section id="map" data-sec>
+      <div class="read">
+        <div class="eyebrow">02 · Market map</div>
+        <h2>Where medtech physical AI is being built</h2>
+        <p>Four layers of startups, from general-purpose robot AI down to devices at the bedside or in the field, plus the incumbents who are likely to buy them. Click a company for details, or filter to see J2's portfolio, my shortlist, Inner Logic's competitors and the likely acquirers.</p>
+      </div>
+      <div class="mapbar" role="group" aria-label="Filter companies">
+        <button class="chipbtn" type="button" data-filter="all" aria-pressed="true">All</button>
+        <button class="chipbtn" type="button" data-filter="j2" aria-pressed="false">J2 portfolio</button>
+        <button class="chipbtn" type="button" data-filter="short" aria-pressed="false">My shortlist</button>
+        <button class="chipbtn" type="button" data-filter="watch" aria-pressed="false">Watchlist</button>
+        <button class="chipbtn" type="button" data-filter="comp" aria-pressed="false">Competitors to Inner Logic</button>
+        <button class="chipbtn" type="button" data-filter="inc" aria-pressed="false">Incumbents &amp; acquirers</button>
+      </div>
+      <div class="legend"><span><i style="background:var(--j2)"></i>J2 portfolio</span><span><i style="background:var(--accent)"></i>Shortlist</span><span><i style="border:1.5px solid var(--accent)"></i>Watchlist</span><span><i style="background:var(--warn)"></i>Competitor to Inner Logic</span><span><i style="background:var(--ink);border-radius:2px"></i>Incumbent / likely acquirer</span><span><i style="background:var(--muted)"></i>Context</span></div>
+      <div class="map">
+        <div class="layers" id="layers"></div>
+        <aside class="detail" id="detail" aria-live="polite"></aside>
+      </div>
+      <div id="proof-points">
+        <h3 style="margin-bottom:6px">Key surgical robot systems and AI innovations</h3>
+        <p class="small" style="max-width:68ch;margin-bottom:14px">The research results that show autonomy works. Three of the four come from Axel Krieger's lab at Johns Hopkins; he is now Inner Logic's Chief Robotics Officer. Every one of them was proven on animals, cadavers or phantoms, never yet on a patient. Closing that gap is the job of <strong>simulation training and validation</strong>.</p>
+        <div class="proofs">
+          <article class="proof">
+            <div class="proof-top"><h3>Surgical Robot Transformer-Hierarchy (SRT-H)</h3><span class="lab il">Johns Hopkins · Krieger lab · 2025</span></div>
+            <ul>
+              <li>Built on the same machine learning architecture as ChatGPT. It learns from videos of surgeons, reinforced with text captions, instead of following pre-programmed paths.</li>
+              <li>Autonomously completed the clipping-and-cutting phase of a gallbladder removal, a string of 17 tasks, with 100% accuracy. It adapted to non-uniform anatomy, to tissue colored with blood-like dyes and to changed starting positions, and it took spoken commands and corrections.</li>
+            </ul>
+            <dl><dt>Tested on</dt><dd>Lifelike pig-organ models, 8 procedures; not live patients</dd><dt>Limits</dt><dd>Slower than a human surgeon; results comparable to an expert</dd><dt>Published</dt><dd>Science Robotics, July 2025</dd></dl>
+            <p class="why">Shows a robot can learn a procedure from video. The next question is whether it is safe across many patients, which is what simulation can test.</p>
+            <p class="src"><a href="https://hub.jhu.edu/2025/07/09/robot-performs-first-realistic-surgery-without-human-help/" target="_blank" rel="noopener">JHU Hub</a> · <a href="https://newatlas.com/robotics/worlds-first-robot-surgery/" target="_blank" rel="noopener">New Atlas</a> · <a href="https://www.fiercebiotech.com/medtech/johns-hopkins-ai-powered-voice-controlled-robot-performs-autonomous-surgery" target="_blank" rel="noopener">Fierce Biotech</a></p>
+          </article>
+          <article class="proof">
+            <div class="proof-top"><h3>Smart Tissue Autonomous Robot (STAR)</h3><span class="lab il">Johns Hopkins · Krieger lab · 2022</span></div>
+            <ul>
+              <li>First robot to perform laparoscopic surgery without human help: an intestinal anastomosis, suturing two ends of an intestine together, in four pigs.</li>
+              <li>Uses a structural-light 3D endoscope and a machine learning tracking algorithm to follow tissue as it moves. The team reported significantly better results than humans performing the same procedure.</li>
+            </ul>
+            <dl><dt>Tested on</dt><dd>Pigs, 4 procedures</dd><dt>Published</dt><dd>Science Robotics, January 2022</dd></dl>
+            <p class="why">Soft tissue shifts and varies, which is why autonomy needs testing across many virtual anatomies before human trials.</p>
+            <p class="src"><a href="https://www.eurekalert.org/news-releases/941011" target="_blank" rel="noopener">EurekAlert (JHU release)</a> · <a href="https://hub.jhu.edu/2022/01/26/star-robot-performs-intestinal-surgery/" target="_blank" rel="noopener">JHU Hub</a></p>
+          </article>
+          <article class="proof">
+            <div class="proof-top"><h3>Imitation learning on the da Vinci</h3><span class="lab il">Johns Hopkins &amp; Stanford · Krieger lab · 2024</span></div>
+            <ul>
+              <li>Trained a standard da Vinci Surgical System on hundreds of videos recorded by wrist cameras on da Vinci arms during real procedures.</li>
+              <li>The robot learned to manipulate a needle, lift tissue and suture "as skillfully as human doctors," and recovers on its own, for example picking up a dropped needle.</li>
+            </ul>
+            <dl><dt>Tested on</dt><dd>A simulated surgical setting</dd><dt>Presented</dt><dd>Conference on Robot Learning, November 2024</dd></dl>
+            <p class="why">The world's installed da Vinci base already records the training data. Turning that data into validated behavior is the bottleneck.</p>
+            <p class="src"><a href="https://hub.jhu.edu/2024/11/11/surgery-robots-trained-with-videos/" target="_blank" rel="noopener">JHU Hub</a></p>
+          </article>
+          <article class="proof">
+            <div class="proof-top"><h3>Digital twin telesurgery</h3><span class="lab">Johns Hopkins · Kazanzides lab · 2025</span></div>
+            <ul>
+              <li>A real-time digital twin simulates the remote robot so the surgeon can keep operating a virtual copy when the network signal drops.</li>
+              <li>The system logs the surgeon's moves during the outage and replays them at double speed once the connection returns. Without it, the robot in the field simply stops.</li>
+            </ul>
+            <dl><dt>Platform</dt><dd>da Vinci Research Kit</dd><dt>Presented</dt><dd>International Symposium on Medical Robotics, May 2025</dd></dl>
+            <p class="why">Remote surgery over unreliable links is a battlefield problem first. A digital twin is simulation doing safety work in real time.</p>
+            <p class="src"><a href="https://www.cs.jhu.edu/news/new-directions-for-the-da-vinci/" target="_blank" rel="noopener">JHU Computer Science</a></p>
+          </article>
+        </div>
+        <h3 style="margin:20px 0 10px;font-size:16px">Other milestones</h3>
+        <div class="milestones">
+          <div class="milestone"><b>Orthopedic trauma, sim-to-real</b><span>Inner Logic's founders trained orthopedic trauma AI entirely in simulation, then ran it on physical hardware and patient anatomy.</span><span class="cap"><a href="https://techstartups.com/?p=136694" target="_blank" rel="noopener">TechStartups</a></span></div>
+          <div class="milestone"><b>AI-GUIDE vascular access</b><span>Handheld robot from MIT Lincoln Lab and MGH that semi-automates needle placement for medics; 95% success in pigs. Now commercialized by AutonomUS.</span><span class="cap"><a href="https://mhsrs.health.mil/MHSRS/download/downloadabstractfile/6341" target="_blank" rel="noopener">MHSRS abstract</a></span></div>
+          <div class="milestone"><b>Autonomous vascular ultrasound</b><span>Vexev's VxWave scanned successfully 94% of the time when run by non-specialist staff in dialysis clinics.</span><span class="cap"><a href="https://hitconsultant.net/2026/08/24/vexev-raises-6m-autonomous-robotic-vascular-imaging-platform-vxwave/" target="_blank" rel="noopener">HIT Consultant</a></span></div>
+          <div class="milestone"><b>Remote surgery in orbit</b><span>Surgeons in Nebraska operated Virtual Incision's spaceMIRA on the International Space Station in February 2024, completing surgical tasks despite signal lag.</span><span class="cap"><a href="https://news.unl.edu/newsrooms/today/article/surgical-robot-passes-space-test-with-flying-colors" target="_blank" rel="noopener">University of Nebraska</a></span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 MEDTECH -->
+    <section id="medtech" data-sec>
+      <div class="read">
+        <div class="eyebrow">03 · Why medtech is hard</div>
+        <h2>Three problems a warehouse robot never faces</h2>
+        <p>Medicine is one of the most valuable places for physical AI, and one of the hardest. Fewer than 6% of eligible procedures are done robotically today, so the room to grow is large, but each of these barriers slows adoption.</p>
+      </div>
+      <div class="cols">
+        <div class="card"><div class="eyebrow">Data</div><h3>You can't collect a million surgeries</h3><p>Robots learn from repetition. Every patient's anatomy is different, and failure cases are rare and can't be staged on people. Training data has to come from video, simulation and small numbers of real cases.</p></div>
+        <div class="card"><div class="eyebrow">Evidence</div><h3>Proof is slow and expensive</h3><p>Devices are tested in cadaver and animal labs that are costly and only cover a narrow range of anatomy. An autonomous system multiplies the cases a regulator will want to see.</p></div>
+        <div class="card"><div class="eyebrow">Trust</div><h3>Someone has to be accountable</h3><p>Surgeons, hospitals and the FDA all need to know who is responsible when an autonomous step goes wrong. That is why DARPA frames its program as building a partner for surgeons, not a replacement.</p></div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--j2)">
+        <div class="eyebrow" style="color:var(--j2)">Why defense pulls first</div>
+        <p>In large-scale combat or mass-casualty events there are not enough surgeons, and the wounded may be hours from one. DARPA's surgical competition is explicitly trying to create surgical capacity on demand, and MASH targets internal bleeding, a leading cause of survivable death on the battlefield. The military will accept autonomy sooner because the alternative is often no care at all. Civilian hospitals follow once the evidence exists.</p>
+      </div>
+    </section>
+
+    <!-- 04 INNER LOGIC -->
+    <section id="inner-logic" data-sec>
+      <div class="read">
+        <div class="eyebrow">04 · Deep dive</div>
+        <h2>Inner Logic: the test track for surgical autonomy</h2>
+        <p class="lede">Inner Logic builds virtual patients from real clinical and procedural data, so device makers can design, test and train autonomous systems before going near a cadaver lab.</p>
+      </div>
+      <div class="facts">
+        <div><span class="k">HQ</span><span class="v">Baltimore, MD</span></div>
+        <div><span class="k">Founded</span><span class="v">2023 <span class="cap">(some reports say 2025)</span></span></div>
+        <div><span class="k">Seed</span><span class="v num">$11.5M · Jul 2026</span></div>
+        <div><span class="k">Led by</span><span class="v">General Catalyst, Bison; J2 participated</span></div>
+        <div><span class="k">Formerly</span><span class="v">Semaphor</span></div>
+      </div>
+      <p class="small muted">Founders: Tito Porras, MD (CEO; left neurosurgery residency at Johns Hopkins), Mathias Unberath, PhD (CTO; computer vision and simulation), Axel Krieger, PhD (Chief Robotics Officer; his robot performed the first autonomous laparoscopic surgery in a live animal).</p>
+
+      <div>
+        <h3 style="margin-bottom:12px">How it works</h3>
+        <div class="flow" role="list">
+          <div class="step" role="listitem"><span class="n">IN</span><b>Real clinical &amp; procedural data</b><span>Imaging, anatomy and recorded procedures</span></div>
+          <div class="step" role="listitem"><span class="n">BUILD</span><b>Thousands of virtual patients</b><span>Varied anatomy, imaging conditions and failure cases</span></div>
+          <div class="step" role="listitem"><span class="n">TEST</span><b>Simulate the device or AI</b><span>Try designs and train models across the population</span></div>
+          <div class="step" role="listitem"><span class="n">PROVE</span><b>Traceable evidence</b><span>Each development cycle documented for regulators</span></div>
+          <div class="step" role="listitem"><span class="n">OUT</span><b>Fewer, better physical tests</b><span>Then, longer term, autonomy in the procedure</span></div>
+        </div>
+        <p class="cap" style="margin-top:8px">Proof point: the team trained orthopedic trauma AI entirely in simulation, then deployed it on physical hardware and patient anatomy.</p>
+      </div>
+
+      <div class="case">
+        <div class="card bull"><div class="eyebrow">Bull case</div>
+          <ul>
+            <li><b>Picks and shovels.</b> Inner Logic sells to every device maker building autonomy, so it doesn't have to pick which robot wins.</li>
+            <li><b>A rare team.</b> A surgeon, a simulation researcher and a surgical-autonomy pioneer, with a sim-to-real result already shown.</li>
+            <li><b>Regulatory tailwind.</b> FDA guidance from 2023 and 2025 sets out how computational modeling can count as evidence in device submissions.</li>
+            <li><b>Dual-use fit.</b> Trauma autonomy for DARPA and the military needs exactly this kind of validated testing.</li>
+          </ul>
+        </div>
+        <div class="card bear"><div class="eyebrow">Bear case</div>
+          <ul>
+            <li><b>Evidence not yet accepted.</b> No device submission has publicly used Inner Logic's evidence package.</li>
+            <li><b>Better-funded rival.</b> adsilico (UK) has raised a £10M Series A for virtual-patient device testing.</li>
+            <li><b>Free alternative.</b> ARPA-H is paying Kitware to build an open simulation testbed for autonomous stroke robots.</li>
+            <li><b>Long sales cycles.</b> Device makers move slowly, and many may build simulation in-house as their own IP.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="cols">
+        <div class="card"><div class="eyebrow">The crux</div><h3>Will the FDA accept simulation as evidence?</h3><p>Everything depends on regulators trusting results from virtual patients. The standard for this is credibility assessment of computational models (ASME V&amp;V 40, referenced in FDA guidance). Whoever gets simulation evidence accepted in a real submission first gains a lasting lead.</p></div>
+        <div class="card"><div class="eyebrow">The dual-use angle</div><h3>Battlefield autonomy needs a test track</h3><p>DARPA's surgical competition and MASH program are funding autonomous trauma care, and those systems can't be tested on wounded soldiers. Inner Logic's first proof point was orthopedic trauma. That makes it a natural testing partner for defense programs, which is where J2's government relationships could help.</p></div>
+      </div>
+
+
+      <div>
+        <h3 style="margin-bottom:6px">What experts have said publicly</h3>
+        <p class="cap" style="margin-bottom:12px">From FDA researchers and academic and industry leaders in simulation. Green supports the thesis; red is the strongest counterpoint.</p>
+        <div class="evidence">
+          <figure class="ev"><span class="tag">Regulators already accept it in places</span><blockquote>Simulations “have replaced confirmatory clinical trials for the MR safety assessment of implants.”</blockquote><footer><b>Tina Morrison et al.</b>, FDA Office of Science and Engineering Laboratories, 2018 · <a href="https://www.frontiersin.org/journals/medicine/articles/10.3389/fmed.2018.00241/pdf" target="_blank" rel="noopener">Frontiers in Medicine</a></footer></figure>
+          <figure class="ev"><span class="tag">The FDA's own goal</span><blockquote>CDRH will promote computational modeling to “minimize the burden of animal and human studies.”</blockquote><footer><b>Tina Morrison et al.</b>, FDA, 2018 · <a href="https://www.frontiersin.org/journals/medicine/articles/10.3389/fmed.2018.00241/pdf" target="_blank" rel="noopener">Frontiers in Medicine</a></footer></figure>
+          <figure class="ev"><span class="tag">Faster and cheaper</span><blockquote>In silico trials can answer the same questions “in a fraction of the time it normally takes, and at a fraction of the cost.”</blockquote><footer><b>Alex Frangi</b>, Professor of Computational Medicine, on an in silico trial of a brain-aneurysm device that reproduced three real trials · <a href="https://www.leeds.ac.uk/news/article/4850/huge-potential-in-virtual-clinical-trials" target="_blank" rel="noopener">University of Leeds</a></footer></figure>
+          <figure class="ev"><span class="tag">Replacing animal work</span><blockquote>“You don't have to poke around inside an animal; you have a nice model.”</blockquote><footer><b>Steve Levine</b>, Senior Director of Virtual Human Modeling, Dassault Systèmes · <a href="https://www.rdworldonline.com/how-the-living-heart-project-could-transform-fdas-approach-to-medical-device-testing/" target="_blank" rel="noopener">R&amp;D World</a></footer></figure>
+          <figure class="ev counter"><span class="tag">The open question</span><blockquote>“What we don't have is the long-term longitudinal data—what happens three, five, ten years from now?”</blockquote><footer><b>Steve Levine</b>, Dassault Systèmes, on the limits of virtual models · <a href="https://www.rdworldonline.com/how-the-living-heart-project-could-transform-fdas-approach-to-medical-device-testing/" target="_blank" rel="noopener">R&amp;D World</a></footer></figure>
+        </div>
+        <p class="small" style="margin-top:12px;max-width:68ch">My read: regulators have accepted simulation in narrow, well-defined cases such as MRI safety, and simulation already accounts for about a fifth of device validation spend (section 05). The weak spot is long-term performance. That is why I expect Inner Logic to win first in design exploration and AI training, and later in evidence for submissions.</p>
+      </div>
+
+      <div>
+        <h3 style="margin-bottom:12px">How Inner Logic compares</h3>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Company</th><th>Approach</th><th>Stage</th><th>Vs. Inner Logic</th></tr></thead>
+            <tbody>
+              <tr><td><b>Inner Logic</b><br><span class="cap">Baltimore</span></td><td>Virtual patients for testing devices and training autonomous systems</td><td class="num">Seed, $11.5M</td><td>Benchmark</td></tr>
+              <tr><td><b>adsilico</b><br><span class="cap">Leeds, UK</span></td><td>AI simulation of device performance across virtual patient populations</td><td class="num">Series A, £10M</td><td>Closest rival and further along. Focused on device performance, not autonomy.</td></tr>
+              <tr><td><b>Virtonomy</b><br><span class="cap">Munich</span></td><td>Digital patient replicas for in silico device trials</td><td class="num">&gt;€5M raised</td><td>Same idea for device makers; no sign of a robotics focus.</td></tr>
+              <tr><td><b>Kitware</b><br><span class="cap">Clifton Park, NY</span></td><td>Open simulation testbed for ARPA-H's autonomous stroke robots</td><td>Government performer</td><td>Free and public. The biggest risk in endovascular autonomy.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <h3 style="margin-bottom:6px">Exit paths</h3>
+        <p class="small" style="max-width:68ch;margin-bottom:12px">Inner Logic has two groups of likely buyers, which lowers the risk for J2.</p>
+        <div class="exits">
+          <div class="card"><div class="eyebrow">Device incumbents</div><h3>Buyers that are also customers</h3>
+            <ul>
+              <li>Surgical robotics has a record of large acquisitions: J&amp;J paid $3.4B upfront for Auris Health (2019), Stryker about $1.65B for MAKO Surgical (2013) and Siemens Healthineers $1.1B for Corindus (2019).</li>
+              <li>Incumbents also buy in early: Penumbra led Magnendo's Series A, and Ottobock led Phantom Neuro's.</li>
+              <li>The risk: the same companies could build simulation in-house instead of buying it.</li>
+            </ul>
+          </div>
+          <div class="card"><div class="eyebrow">Simulation software platforms</div><h3>Buyers that need a medical edge</h3>
+            <ul>
+              <li>Synopsys paid $35B for Ansys (closed July 2025). Dassault Systèmes already builds virtual human models with the FDA.</li>
+              <li>For these companies, Inner Logic would add something they lack: clinical data and surgical-autonomy expertise.</li>
+              <li>Synopsys paid about 15× Ansys's 2023 revenue of $2.27B, a benchmark for what simulation businesses can be worth.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="eyebrow">If I met the founders</div>
+        <h3>Five questions I would ask</h3>
+        <ol class="qlist">
+          <li>Which device category will be the first where your evidence appears in an FDA submission, and when?</li>
+          <li>How many virtual patients do you build per real case, and how do you show the synthetic ones are realistic?</li>
+          <li>What do customers pay for today: design exploration, validation evidence, or AI training? Which grows fastest?</li>
+          <li>How do you stay ahead of open testbeds like ARPA-H's, and what data do you have that they can't get?</li>
+          <li>Which defense programs (DARPA, DHA, MTEC) are you working with or targeting?</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- 05 MARKET -->
+    <section id="model" data-sec>
+      <div class="read">
+        <div class="eyebrow">05 · Market size</div>
+        <h2>A $10.7B validation market, with simulation already a fifth of it</h2>
+        <p>Instead of building the market from my own assumptions, I sized it from published market research. Device makers spend money to prove their products work, mostly on physical testing today and increasingly on simulation. That spending is the market <strong>simulation training and validation</strong> competes for. Every number below links to its source and calculation in the table at the end of this section.</p>
+      </div>
+
+      <div class="tam">
+        <div class="tam-row">
+          <div class="tam-label"><span class="k">TAM</span><b>Medical device validation spend</b><span class="cap">Testing services plus in silico trials for devices, 2024</span></div>
+          <div class="tam-fig num">$10.7B<sup class="ref"><a href="#c6">6</a></sup></div>
+        </div>
+        <div class="stack" role="img" aria-label="Stacked bar: testing services 8.6 billion dollars, 80.5 percent; in silico trials for devices 2.1 billion dollars, 19.5 percent">
+          <div class="seg phys" style="width:80.5%"><span>Testing services · $8.6B</span></div>
+          <div class="seg sim" style="width:19.5%"><span>In silico · $2.1B</span></div>
+        </div>
+        <div class="tam-row">
+          <div class="tam-label"><span class="k">SAM</span><b>In silico trials for medical devices</b><span class="cap">57.88%<sup class="ref"><a href="#c4">4</a></sup> of a $3.6B<sup class="ref"><a href="#c3">3</a></sup> in silico trials market, 2024. Inner Logic starts in procedural devices and surgical autonomy, a segment within this market.</span></div>
+          <div class="tam-fig num">$2.1B<sup class="ref"><a href="#c5">5</a></sup></div>
+        </div>
+        <p class="cap">TAM adds two estimates from different publishers, so the split is approximate. For scale: every 1% of the device in silico market is about $21M<sup class="ref"><a href="#c8">8</a></sup> of annual revenue.</p>
+      </div>
+
+      <div class="cols">
+        <div class="card"><div class="eyebrow">Today</div><div class="stat num">19.5%<sup class="ref"><a href="#c7">7</a></sup></div><p>Simulation's share of device validation spend in 2024: $2.1B of $10.7B. It is already a real line item, not a future idea.</p></div>
+        <div class="card"><div class="eyebrow">Testing growth</div><div class="stat num">8.8%<sup class="ref"><a href="#c2">2</a></sup></div><p>Annual growth forecast for device testing services, 2025–2034, to $19.9B. Physical validation spend keeps rising.</p></div>
+        <div class="card"><div class="eyebrow">Simulation growth</div><div class="stat num">7.7%<sup class="ref"><a href="#c3">3</a></sup></div><p>Annual growth forecast for in silico trials, 2025–2030, to $5.6B. The forecast does not yet price in autonomy, which needs simulation most.</p></div>
+        <div class="card"><div class="eyebrow">Demand</div><div class="stat num">14.7%<sup class="ref"><a href="#c9">9</a></sup></div><p>Annual growth forecast for surgical robots, from $13.7B in 2025 to $27.1B in 2030. More robots, and more autonomy, means more to validate.</p></div>
+      </div>
+
+      <div>
+        <h3 style="margin-bottom:6px">How the markets compare</h3>
+        <p class="cap" style="margin-bottom:12px">Chart drawn from the publishers' figures. Forecast years differ by report and are labeled on each bar.</p>
+        <div class="card mchart" role="img" aria-label="Bar chart comparing current size and forecast for five markets">
+          <div class="mrow"><span class="mlab">Device testing services</span><div class="mbars"><div class="mbar now" style="width:14.35%"></div><span class="mval">$8.6B · 2024</span><div class="mbar fut" style="width:33.2%"></div><span class="mval">$19.9B · 2034</span></div></div>
+          <div class="mrow"><span class="mlab">In silico clinical trials</span><div class="mbars"><div class="mbar now" style="width:6.0%"></div><span class="mval">$3.6B · 2024</span><div class="mbar fut" style="width:9.34%"></div><span class="mval">$5.6B · 2030</span></div></div>
+          <div class="mrow"><span class="mlab">Surgical robots</span><div class="mbars"><div class="mbar now" style="width:19.99%"></div><span class="mval">$12.0B · 2024</span><div class="mbar fut" style="width:45.28%"></div><span class="mval">$27.1B · 2030</span></div></div>
+          <div class="mrow"><span class="mlab">Computer-aided engineering</span><div class="mbars"><div class="mbar now" style="width:20.49%"></div><span class="mval">$12.3B · 2025</span><div class="mbar fut" style="width:33.3%"></div><span class="mval">$20.0B · 2030</span></div></div>
+          <div class="mrow"><span class="mlab">Digital twins in healthcare</span><div class="mbars"><div class="mbar now" style="width:4.49%"></div><span class="mval">$2.7B · 2024</span><div class="mbar fut" style="width:100%"></div><span class="mval">$59.9B · 2030</span></div></div>
+          <div class="mlegend"><span><i class="now"></i>Current size</span><span><i class="fut"></i>Forecast</span><span>Scale: bars relative to $59.9B</span></div>
+        </div>
+      </div>
+
+      <div>
+        <h3 style="margin-bottom:12px">The published estimates</h3>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Market</th><th>Current</th><th>Forecast</th><th>Annual growth</th><th>Role in the thesis</th><th>Ref.</th></tr></thead>
+            <tbody>
+              <tr><td>Medical device testing services</td><td class="num">$8.6B (2024)</td><td class="num">$19.9B (2034)</td><td class="num">8.8%</td><td>Today's validation spend, mostly physical and clinical</td><td><a href="#c1">1</a>, <a href="#c2">2</a></td></tr>
+              <tr><td>In silico clinical trials (all)</td><td class="num">$3.6B (2024)</td><td class="num">$5.6B (2030)</td><td class="num">7.7%</td><td>Medical devices are 57.88% of it</td><td><a href="#c3">3</a>, <a href="#c4">4</a></td></tr>
+              <tr><td>Surgical robots</td><td class="num">$12.0B (2024)</td><td class="num">$27.1B (2030)</td><td class="num">14.7%</td><td>The customers who need validation</td><td><a href="#c9">9</a></td></tr>
+              <tr><td>Computer-aided engineering software</td><td class="num">$12.3B (2025)</td><td class="num">$20.0B (2030)</td><td class="num">10.2%</td><td>The simulation platforms that could acquire</td><td><a href="#c10">10</a></td></tr>
+              <tr><td>Digital twins in healthcare</td><td class="num">$2.7B (2024)</td><td class="num">$59.9B (2030)</td><td class="num">68.0%</td><td>Momentum signal; includes hospital operations, so not added to TAM</td><td><a href="#c11">11</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <h3 style="margin-bottom:6px">Where simulation and data in medtech are heading</h3>
+        <p class="small" style="max-width:68ch;margin-bottom:14px">What is already happening, and what I expect next.</p>
+        <div class="outlook">
+          <div class="ol"><span class="k">Already happening</span><h3>Regulators are building the rulebook</h3><p>The FDA issued final guidance on computational modeling in November 2023<sup class="ref"><a href="#c12">12</a></sup>. It has qualified 21 medical device development tools, nine of them non-clinical assessment models such as virtual MRI-safety evaluations (2021) and a virtual screw pullout test (2025)<sup class="ref"><a href="#c13">13</a></sup>.</p></div>
+          <div class="ol"><span class="k">Already happening</span><h3>Animal testing is being phased down</h3><p>The FDA's April 2025 roadmap set timeframes to phase out animal testing where equivalent alternatives exist, including computational models. In its first year it qualified its first AI-based drug development tool<sup class="ref"><a href="#c14">14</a></sup>. The roadmap covers drugs, and device policy often follows.</p></div>
+          <div class="ol"><span class="k">Already happening</span><h3>Data is becoming the moat</h3><p>Surgical video libraries now run past 30,000 hours<sup class="ref"><a href="#c15">15</a></sup>, and robots like SRT-H learn procedures from them. Whoever holds the most realistic patient and procedure data builds the most credible simulations.</p></div>
+          <div class="ol mine"><span class="k">My view</span><h3>From design tool to standard evidence</h3><p>I expect simulation to move from design support to a standard part of submissions for procedural devices within the decade, starting where the FDA already accepts it. Autonomous devices will speed this up, because their edge cases can't all be tested physically.</p></div>
+          <div class="ol mine"><span class="k">My view</span><h3>Defense first, then consolidation</h3><p>Battlefield autonomy will be validated first, because DARPA and the Defense Health Agency are already paying for it. Over time, I expect the large simulation and device companies to buy the validation specialists, which gives J2 a clear exit path.</p></div>
+        </div>
+      </div>
+
+      <div id="calcs">
+        <h3 style="margin-bottom:6px">Calculations and sources</h3>
+        <p class="cap" style="margin-bottom:12px">"Reported" means the figure is stated by the publisher. The publisher's chart column names the figure on the report page that shows the number.</p>
+        <div class="tablewrap">
+          <table class="calc">
+            <thead><tr><th>#</th><th>Figure</th><th>Value</th><th>Calculation</th><th>Source and publisher's chart</th></tr></thead>
+            <tbody>
+              <tr id="c1"><td>1</td><td>Medical device testing services market, 2024</td><td class="num">$8.6B</td><td>Reported</td><td><a href="https://www.gminsights.com/industry-analysis/medical-device-testing-services-market" target="_blank" rel="noopener">Global Market Insights, report GMI6237 (Jan 2025)</a>. Chart: "Medical Devices Testing Services Market, 2025–2034"</td></tr>
+              <tr id="c2"><td>2</td><td>Testing services forecast and growth</td><td class="num">$19.9B (2034); 8.8% a year</td><td>Reported (2025–2034). Check: $8.6B × 1.088<sup>10</sup> = $20.0B, rounded</td><td>Same report. Chart: "Medical Devices Testing Services Market, By Services, 2021–2034 (USD Billion)"</td></tr>
+              <tr id="c3"><td>3</td><td>In silico clinical trials market</td><td class="num">$3.6B (2024); $5.6B (2030); 7.7% a year</td><td>Reported (growth for 2025–2030)</td><td><a href="https://www.grandviewresearch.com/industry-analysis/insilico-clinical-trials-market-report" target="_blank" rel="noopener">Grand View Research, In Silico Clinical Trials Market report</a>. Chart: "In Silico Clinical Trials Market Size by Industry, 2020–2030 (USD Billion)"</td></tr>
+              <tr id="c4"><td>4</td><td>Medical devices' share of in silico trials</td><td class="num">57.88% (2024)</td><td>Reported</td><td>Same report and chart (the medical devices segment)</td></tr>
+              <tr id="c5"><td>5</td><td>SAM: in silico trials for devices</td><td class="num">$2.1B</td><td>$3.6B × 57.88% = $2.08B</td><td>Calculated from 3 and 4</td></tr>
+              <tr id="c6"><td>6</td><td>TAM: device validation spend</td><td class="num">$10.7B</td><td>$8.6B + $2.08B = $10.68B</td><td>Calculated from 1 and 5</td></tr>
+              <tr id="c7"><td>7</td><td>Simulation's share of validation spend</td><td class="num">19.5%</td><td>$2.08B ÷ $10.68B = 19.5%</td><td>Calculated from 5 and 6</td></tr>
+              <tr id="c8"><td>8</td><td>Value of 1% of the SAM</td><td class="num">$21M a year</td><td>$2.08B × 1% = $20.8M</td><td>Calculated from 5</td></tr>
+              <tr id="c9"><td>9</td><td>Surgical robots market</td><td class="num">$12.0B (2024); $13.7B (2025); $27.1B (2030); 14.7% a year</td><td>Reported. Check: ($27.14B ÷ $13.69B)<sup>1/5</sup> − 1 = 14.7%. The publisher labels the period as both 2024–2030 and 2025–2030; the 2025 figures match.</td><td><a href="https://www.marketsandmarkets.com/market-reports/surgical-robots-market-256618532.html" target="_blank" rel="noopener">MarketsandMarkets, Surgical Robots Market report</a>. Chart: market overview graphic on the report page</td></tr>
+              <tr id="c10"><td>10</td><td>Computer-aided engineering software market</td><td class="num">$12.28B (2025); $19.96B (2030); 10.2% a year</td><td>Reported. Check: ($19.96B ÷ $12.28B)<sup>1/5</sup> − 1 = 10.2%</td><td><a href="https://www.marketsandmarkets.com/PressReleases/computer-aided-engineering.asp" target="_blank" rel="noopener">MarketsandMarkets press release, CAE market</a>. No chart on the release page</td></tr>
+              <tr id="c11"><td>11</td><td>Digital twins in healthcare market</td><td class="num">$2.69B (2024); $4.47B (2025); $59.94B (2030); 68.0% a year</td><td>Reported (2025–2030). Check: ($59.94B ÷ $4.47B)<sup>1/5</sup> − 1 = 68.1%</td><td><a href="https://www.marketsandmarkets.com/Market-Reports/digital-twins-in-healthcare-market-74014375.html" target="_blank" rel="noopener">MarketsandMarkets, Digital Twins in Healthcare report</a>. Chart: "Digital Twins in Healthcare Market, by Application, 2025 vs. 2030 (USD Million)"</td></tr>
+              <tr id="c12"><td>12</td><td>FDA final guidance on computational modeling</td><td class="num">November 2023</td><td>Reported</td><td><a href="https://www.rdworldonline.com/how-the-living-heart-project-could-transform-fdas-approach-to-medical-device-testing/" target="_blank" rel="noopener">R&amp;D World</a></td></tr>
+              <tr id="c13"><td>13</td><td>FDA Medical Device Development Tools</td><td class="num">21 qualified; 9 non-clinical assessment models</td><td>Counted from the FDA's list</td><td><a href="https://www.fda.gov/medical-devices/medical-device-development-tools-mddt" target="_blank" rel="noopener">FDA, Medical Device Development Tools</a></td></tr>
+              <tr id="c14"><td>14</td><td>FDA roadmap to reduce animal testing</td><td class="num">April 2025 roadmap; first AI-based tool in year one</td><td>Reported</td><td><a href="https://www.fda.gov/news-events/press-announcements/fda-achieves-year-1-goals-reducing-animal-testing-drug-development" target="_blank" rel="noopener">FDA press announcement, April 20, 2026</a></td></tr>
+              <tr id="c15"><td>15</td><td>Surgical video library size</td><td class="num">30,000+ hours</td><td>Reported by Theator</td><td><a href="https://hitconsultant.net/2022/07/25/theator-surgical-intelligence-funding" target="_blank" rel="noopener">HIT Consultant</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="cap" style="margin-top:8px">Market research firms define markets differently, and their forecasts vary. I use them for scale and direction, and I add only two of them together (for the TAM). The publishers' full reports are paid; the figures above come from their public summary pages.</p>
+      </div>
+    </section>
+
+    <!-- 06 SOURCING -->
+    <section id="sourcing" data-sec>
+      <div class="read">
+        <div class="eyebrow">06 · Where J2 could invest next</div>
+        <h2>Build out the dual-use validation layer, and back the companies that need it</h2>
+        <p>In my search, I found no other U.S. startup doing in silico testing for procedural devices; the closest rivals are in the UK and Germany. J2 already has a stake in the leading U.S. company in medical <strong>simulation training and validation</strong>, Inner Logic, and the rest of the layer is still early. The companies building it lack dual-use pull today because they don't have defense customers yet, which is exactly what J2's network can add. The autonomous-device makers come second: they create the demand and are natural Inner Logic customers. <a href="https://claude.ai/artifact/YFrs9BoBhiyEQubCVgkQF6" target="_blank" rel="noopener">See the full tracker</a>.</p>
+      </div>
+
+      <div>
+        <h3 style="margin-bottom:4px">1 · Build out the layer: simulation and data</h3>
+        <p class="cap" style="margin-bottom:12px">Companies that produce the training data or simulation tools autonomy depends on.</p>
+        <div class="picks">
+          <article class="pick"><span class="score">Thesis fit: strong</span><h3>Lupa Robotics</h3><p>Building a large dataset of human hand movement, captured by gloves that record vision, touch and motion, to train robot hands.</p><p class="link"><b>Connection:</b> dexterity data is the raw material for training surgical and prosthetic hands in simulation.</p><span class="meta">San Francisco · Accelerator (MassRobotics 2026 cohort)</span></article>
+          <article class="pick"><span class="score">Thesis fit: strong</span><h3>Theator</h3><p>Captures surgical video and analyzes it with computer vision. Reports more than 30,000 hours of surgical video. Raised a $39.5M Series A led by Insight Partners.</p><p class="link"><b>Connection:</b> the kind of video library that imitation-learning systems like SRT-H train on.</p><span class="meta">Surgical video data · Confirm HQ and current stage</span></article>
+          <article class="pick"><span class="score">Thesis fit: strong</span><h3>Uncovr</h3><p>Turns surgical video into structured operative records across 400+ operating rooms. $7M seed led by Index Ventures.</p><p class="link"><b>Connection:</b> structured OR data is what validation needs to be grounded in real procedures.</p><span class="meta">Europe · Outside J2's U.S. mandate as-is</span></article>
+          <article class="pick"><span class="score">Thesis fit: moderate</span><h3>Physicl</h3><p>Generates synthetic 3D training environments for robots and physical AI. $10M seed led by Inovia Capital (November 2026). No medical customers yet.</p><p class="link"><b>Connection:</b> a general-purpose simulation tool that could extend into medicine, or partner with Inner Logic.</p><span class="meta">Paris &amp; San Francisco · Horizontal, not medical</span></article>
+        </div>
+        <p class="cap" style="margin-top:10px">Context: Caresyntax (San Francisco), a surgical data platform, raised a $180M Series C extension including growth debt in 2024. It shows the data layer can scale, but it is past J2's stage.</p>
+      </div>
+
+      <div>
+        <h3 style="margin-bottom:4px">2 · Customers that need the layer: autonomous devices</h3>
+        <p class="cap" style="margin-bottom:12px">Device makers building autonomy that has to be validated before it reaches patients or soldiers.</p>
+        <div class="picks">
+          <article class="pick"><span class="score">Thesis fit: strong</span><h3>AutonomUS Medical Technologies</h3><p>AI-guided handheld robot that lets medics get vascular access. Built at MIT Lincoln Lab and MGH from a Defense Health Agency request; FDA Breakthrough designation.</p><p class="link"><b>Connection:</b> an autonomous device for the battlefield can't be tested on wounded soldiers, so validation across anatomies has to happen in simulation.</p><span class="meta">Boston · Field-care robotics</span></article>
+          <article class="pick"><span class="score">Thesis fit: strong</span><h3>Magnendo</h3><p>MIT spinout steering guidewires with magnets toward autonomous stroke treatment. $18M Series A led by Penumbra, plus an ARPA-H award of up to $32M.</p><p class="link"><b>Connection:</b> autonomous navigation must be validated across thousands of vessel anatomies. Endovascular is a named Inner Logic use case.</p><span class="meta">Newton, MA · Endovascular autonomy</span></article>
+          <article class="pick"><span class="score">Thesis fit: moderate</span><h3>Dopl Technologies</h3><p>Telerobotic ultrasound so a sonographer can scan a patient from hours away. $6.3M seed led by SpringTide.</p><p class="link"><b>Connection:</b> remote scans build a data set today and a path to autonomous scanning later.</p><span class="meta">Bothell, WA · Telerobotics</span></article>
+        </div>
+        <p class="cap" style="margin-top:10px">Moved to the tracker's watchlist: Phantom Neuro (strong bionics team, but its validation problem is per-user control, not procedures) and Parallel Robotics (surgeon-controlled, with no autonomy or data angle yet).</p>
+      </div>
+    </section>
+
+    <!-- 07 NEXT STEPS -->
+    <section id="next-steps" data-sec>
+      <div class="read">
+        <div class="eyebrow">07 · Next steps</div>
+        <h2>My approach to validate my thesis</h2>
+        <p>This deep dive is built on public sources, but the most important insights in this industry only come from conversations with people in the field. My next step is to test the thesis with the people who build, buy and regulate these systems. I look forward to refining the model, shortlist, and report to J2.</p>
+      </div>
+
+      <div class="card advantage">
+        <div class="eyebrow">Leveraging my advantage</div>
+        <div class="adv-grid">
+          <div class="adv"><span class="adv-k">Network</span><b>MIT faculty, labs and alumni</b><p>As a student studying Biological Engineering and Finance at MIT, I can access and learn from the faculty, labs and alumni building these systems at the frontlines of innovation.</p></div>
+          <div class="adv"><span class="adv-k">Engineering</span><b>Bioengineer at an MIT medtech spinout</b><p>I interned as a bioengineer at an MIT medtech spinout and worked across molecular embryology and analytical chemistry labs. These experiences taught me to validate my instincts through genuine work.</p></div>
+          <div class="adv"><span class="adv-k">Investing</span><b>Two years of analyst internships</b><p>I have interned as an analyst in a private equity shop and at a multi-strategy fund manager in New York. I look forward to building the financial case and optimizing the diligence process.</p></div>
+          <div class="adv"><span class="adv-k">Founder access</span><b>Sloan Business Club &amp; MIT Hacking Medicine</b><p>As VP of the Sloan Business Club and a member of the organizing team for MIT Hacking Medicine, I meet founders at events and global hackathons, often before they raise.</p></div>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-h"><span class="when">Step 1</span><b>Test the thesis with builders and regulators</b></div>
+        <div class="stepbody">
+          <p><b>Goal:</b> confirm that simulation training and validation is the real bottleneck, and learn what makes simulation evidence credible.</p>
+          <p><b>How I'd reach them:</b> MIT professors, researchers and the alumni network for device R&amp;D leaders, plus J2's portfolio relationship with Inner Logic.</p>
+          <ul class="examples">
+            <li>Researchers in Hugh Herr's Biomechatronics group at the MIT Media Lab, on how they validate bionic control before it reaches patients</li>
+            <li>The MIT Lincoln Laboratory team behind AI-GUIDE, on how they tested an autonomous device for military medics</li>
+            <li>MIT alumni in R&amp;D roles at Boston-area device companies such as Boston Scientific, on their real physical-testing budgets</li>
+            <li>Inner Logic's founders, Tito Porras, Mathias Unberath and Axel Krieger, through J2</li>
+            <li>FDA modeling researchers and industry members of the Medical Device Innovation Consortium, through its public working groups and events</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-h"><span class="when">Step 2</span><b>Understand who pays for validation</b></div>
+        <div class="stepbody">
+          <p><b>Goal:</b> learn how device makers and defense programs buy simulation, what they pay, and where Inner Logic fits.</p>
+          <p><b>How I'd reach them:</b> J2's government and defense network, Boston robotics events, and the public events that federal programs hold for applicants and performers.</p>
+          <ul class="examples">
+            <li>Teams competing in the DARPA Surgical Competition, on how they test autonomy before live trials</li>
+            <li>Defense Health Agency researchers in the Combat Casualty Care program, which funded AI-GUIDE</li>
+            <li>Inner Logic's co-lead investors at Bison Ventures and General Catalyst, through J2</li>
+            <li>Founders and engineers at MassRobotics, the Boston robotics hub, on what they would pay for validated simulation</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-h"><span class="when">Step 3</span><b>Pressure-test the investment ideas</b></div>
+        <div class="stepbody">
+          <p><b>Goal:</b> check whether the companies in section 06 fit J2's stage and thesis, and find new ones early.</p>
+          <p><b>How I'd reach them:</b> MIT spinout networks, the MassRobotics healthcare program and warm introductions from Step 1 and 2 conversations.</p>
+          <ul class="examples">
+            <li>Magnendo's founders, an MIT spinout in Newton</li>
+            <li>The AutonomUS team, spun out of MIT Lincoln Laboratory and MGH in Boston</li>
+            <li>Lupa Robotics, from the MassRobotics 2026 healthcare cohort, and the next cohort when it is announced in January 2027</li>
+            <li>MIT students and postdocs in robotics and bionics labs who are close to starting companies</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-h"><span class="when">Outcome</span><b>Deliverables to J2</b></div>
+        <ul class="deliver">
+          <li>A sharper view of where Inner Logic can win first, and which defense programs it should reach.</li>
+          <li>A rebuilt market model that uses real testing budgets in place of my assumptions.</li>
+          <li>An updated sourcing tracker with founder notes, and warm introductions to founders who fit J2's thesis.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="sources" id="sources">
+      <div class="eyebrow">Sources</div>
+      <ol>
+        <li><a href="https://pulse2.com/inner-logic-raises-11-5-million-seed-round-to-build-simulation-infrastructure-for-procedural-devices/" target="_blank" rel="noopener">Pulse 2: Inner Logic seed round</a></li>
+        <li><a href="https://www.citybiz.co/article/878109/inner-logic-raises-11-5m-to-build-testing-platform-for-surgical-devices/" target="_blank" rel="noopener">Citybiz: Inner Logic testing platform</a></li>
+        <li><a href="https://runtimewire.com/article/semaphor-inner-logic-11-5m-seed-surgical-simulation" target="_blank" rel="noopener">RuntimeWire: Semaphor rebrands as Inner Logic</a></li>
+        <li><a href="https://www.automate.org/ai/industry-insights/inner-logic-helps-companies-build-autonomous-medical-devices" target="_blank" rel="noopener">A3: Inner Logic helps build autonomous devices</a></li>
+        <li><a href="https://www.startupresearcher.com/news/inner-logic-raises-11-5m-seed-for-autonomous-surgery-simulation-platform" target="_blank" rel="noopener">Startup Researcher: FDA modeling guidance and market size</a></li>
+        <li><a href="https://hub.jhu.edu/2025/07/09/robot-performs-first-realistic-surgery-without-human-help" target="_blank" rel="noopener">JHU Hub: autonomous gallbladder surgery</a></li>
+        <li><a href="https://www.heyfuturenexus.com/posts/physical-ais-picks-and-shovels-moment" target="_blank" rel="noopener">Future Nexus: Physical AI's picks-and-shovels moment</a></li>
+        <li><a href="https://www.darpa.mil/research/challenges/surgical" target="_blank" rel="noopener">DARPA Surgical Competition</a></li>
+        <li><a href="https://thedebrief.org/darpa-is-about-to-test-robotic-surgeons-that-could-soon-help-save-lives-on-the-battlefield/" target="_blank" rel="noopener">The Debrief: DARPA robotic surgeons</a></li>
+        <li><a href="https://everglade.com/?p=3066" target="_blank" rel="noopener">EverGlade: DARPA MASH program</a></li>
+        <li><a href="https://evtoday.com/news/arpa-h-funding-will-support-teams-to-advance-robotics-stroke-interventions" target="_blank" rel="noopener">Endovascular Today: ARPA-H AIR awards</a></li>
+        <li><a href="https://tech.eu/2026/10/26/leeds-ai-spinout-adsilico-raises-ps10m-to-test-medical-devices-on-virtual-patients/" target="_blank" rel="noopener">Tech.eu: adsilico Series A</a></li>
+        <li><a href="https://www.ll.mit.edu/news/life-saving-lincoln-laboratory-technology-wins-2026-excellence-technology-transfer-award" target="_blank" rel="noopener">MIT Lincoln Lab: AI-GUIDE and AutonomUS</a></li>
+        <li><a href="https://medtechinnovator.org/magnendo-awarded-up-to-32m-by-arpa-h-to-advance-autonomous-robotic-stroke-intervention/" target="_blank" rel="noopener">MedTech Innovator: Magnendo ARPA-H award</a></li>
+        <li><a href="https://www.patentvest.com/?p=6558" target="_blank" rel="noopener">PatentVest: surgical robotics market</a></li>
+        <li><a href="https://www.frontiersin.org/journals/medicine/articles/10.3389/fmed.2018.00241/pdf" target="_blank" rel="noopener">Morrison et al. (FDA): computational modeling for medical devices</a></li>
+        <li><a href="https://www.therobotreport.com/johns-hopkins-teaches-robot-to-perform-a-gallbladder-removal-on-a-realistic-patient/" target="_blank" rel="noopener">The Robot Report: JHU robot gallbladder removal</a></li>
+        <li><a href="https://newatlas.com/robotics/worlds-first-robot-surgery/" target="_blank" rel="noopener">New Atlas: SRT-H details</a></li>
+        <li><a href="https://www.eurekalert.org/news-releases/941011" target="_blank" rel="noopener">EurekAlert: STAR laparoscopic surgery (2022)</a></li>
+        <li><a href="https://hub.jhu.edu/2024/11/11/surgery-robots-trained-with-videos/" target="_blank" rel="noopener">JHU Hub: da Vinci trained with videos</a></li>
+        <li><a href="https://www.cs.jhu.edu/news/new-directions-for-the-da-vinci/" target="_blank" rel="noopener">JHU Computer Science: digital twin telesurgery</a></li>
+        <li><a href="https://mhsrs.health.mil/MHSRS/download/downloadabstractfile/6341" target="_blank" rel="noopener">MHSRS: AI-GUIDE abstract</a></li>
+        <li><a href="https://news.unl.edu/newsrooms/today/article/surgical-robot-passes-space-test-with-flying-colors" target="_blank" rel="noopener">University of Nebraska: spaceMIRA on the ISS</a></li>
+        <li><a href="https://www.therobotreport.com/jj-acquires-auris-health-34b/" target="_blank" rel="noopener">The Robot Report: J&amp;J acquires Auris Health</a></li>
+        <li><a href="https://www.sec.gov/Archives/edgar/data/0001411861/000089882213000375/ex99-1.htm" target="_blank" rel="noopener">SEC filing: Stryker to acquire MAKO Surgical</a></li>
+        <li><a href="https://cardiovascularbusiness.com/topics/healthcare-management/healthcare-economics/siemens-healthineers-acquires-corindus-11b" target="_blank" rel="noopener">Cardiovascular Business: Siemens Healthineers acquires Corindus</a></li>
+        <li><a href="https://news.medtronic.com/2025-12-03-Medtronic-announces-FDA-clearance-of-Hugo-TM-robotic-assisted-surgery-system-for-urologic-surgical-procedures" target="_blank" rel="noopener">Medtronic: Hugo FDA clearance</a></li>
+        <li><a href="https://arpa-h.gov/news-and-events/arpa-h-funded-teams-transform-life-saving-stroke-interventions-autonomous-robotic" target="_blank" rel="noopener">ARPA-H: AIR program performers</a></li>
+        <li><a href="https://www.massdevice.com/magnendo-18m-magnetic-robotic-tech-penumbra/" target="_blank" rel="noopener">MassDevice: Penumbra leads Magnendo Series A</a></li>
+        <li><a href="https://hitconsultant.net/2022/07/25/theator-surgical-intelligence-funding" target="_blank" rel="noopener">HIT Consultant: Theator Series A</a></li>
+        <li><a href="https://www.gminsights.com/industry-analysis/medical-device-testing-services-market" target="_blank" rel="noopener">Global Market Insights: medical device testing services market</a></li>
+        <li><a href="https://www.grandviewresearch.com/industry-analysis/insilico-clinical-trials-market-report" target="_blank" rel="noopener">Grand View Research: in silico clinical trials market</a></li>
+        <li><a href="https://www.marketsandmarkets.com/Market-Reports/digital-twins-in-healthcare-market-74014375.html" target="_blank" rel="noopener">MarketsandMarkets: digital twins in healthcare</a></li>
+        <li><a href="https://www.marketsandmarkets.com/market-reports/surgical-robots-market-256618532.html" target="_blank" rel="noopener">MarketsandMarkets: surgical robots market</a></li>
+        <li><a href="https://www.marketsandmarkets.com/PressReleases/computer-aided-engineering.asp" target="_blank" rel="noopener">MarketsandMarkets: computer-aided engineering market</a></li>
+        <li><a href="https://www.fda.gov/medical-devices/medical-device-development-tools-mddt" target="_blank" rel="noopener">FDA: Medical Device Development Tools</a></li>
+        <li><a href="https://www.fda.gov/news-events/press-announcements/fda-achieves-year-1-goals-reducing-animal-testing-drug-development" target="_blank" rel="noopener">FDA: year-one progress on reducing animal testing</a></li>
+        <li><a href="https://www.massdevice.com/caresyntax-raises-180m-ai-surgical-software/" target="_blank" rel="noopener">MassDevice: Caresyntax raises $180M</a></li>
+        <li><a href="https://www.globalstartupsinsights.com/funding/physicl-raises-10-million-in-seed-round-to-build-synthetic-training-data-for-physical-ai/" target="_blank" rel="noopener">Global Startups Insights: Physicl seed round</a></li>
+        <li><a href="https://www.cbinsights.com/company/lupa-robotics" target="_blank" rel="noopener">CB Insights: Lupa Robotics</a></li>
+        <li><a href="https://www.massrobotics.org/revolve-surgical-wins-fda-clearance-for-surgical-robot/" target="_blank" rel="noopener">MassRobotics: Revolve Surgical FDA clearance</a></li>
+        <li><a href="https://runtimewire.com/article/shorya-awtar-parallel-robotics-7-3m-handheld-surgical-robotics" target="_blank" rel="noopener">RuntimeWire: Parallel Robotics</a></li>
+        <li><a href="https://theaiinsider.tech/?p=50372" target="_blank" rel="noopener">AI Insider: Inner Logic simulation of anatomy and failure scenarios</a></li>
+        <li><a href="https://www.fiercehealthcare.com/ai-and-machine-learning/uncovr-secures-7m-seed-funding-ai-surgical-documentation-platform" target="_blank" rel="noopener">Fierce Healthcare: Uncovr findings</a></li>
+        <li><a href="https://www.leeds.ac.uk/news/article/4850/huge-potential-in-virtual-clinical-trials" target="_blank" rel="noopener">University of Leeds: in silico flow-diverter trial</a></li>
+        <li><a href="https://www.rdworldonline.com/how-the-living-heart-project-could-transform-fdas-approach-to-medical-device-testing/" target="_blank" rel="noopener">R&amp;D World: Living Heart Project and the FDA</a></li>
+        <li><a href="https://starfishmedical.com/?p=34769" target="_blank" rel="noopener">StarFish Medical: regulatory clearance through simulation</a></li>
+        <li><a href="https://mdic.org/resources/landscape-report-industry-survey-on-the-use-of-computational-modeling-simulation-in-medical-device-development/" target="_blank" rel="noopener">MDIC: landscape report and industry survey on modeling and simulation</a></li>
+        <li><a href="https://link.springer.com/article/10.1007/s43441-025-00871-2" target="_blank" rel="noopener">De &amp; Lohani (2025): systematic review of in silico trials for devices</a></li>
+        <li><a href="https://www.massdevice.com/study-fda-related-activities-cost-24-million-510k/" target="_blank" rel="noopener">MassDevice: cost to bring a device to market (Makower)</a></li>
+        <li><a href="https://emergobyul.com/news/us-fda-cdrh-2024-annual-report-summary" target="_blank" rel="noopener">Emergo by UL: FDA CDRH 2024 report</a></li>
+        <li><a href="https://www.manufacturingdive.com/news/chip-design-software-maker-synopsys-completes-35b-deal-ansys/753321/" target="_blank" rel="noopener">Manufacturing Dive: Synopsys completes Ansys deal</a></li>
+        <li><a href="https://www.tipranks.com/news/press-releases/ansys-announces-q4-and-fy-2023-financial-results" target="_blank" rel="noopener">Ansys FY2023 results</a></li>
+        <li><a href="https://devicetalks.castos.com/episodes/inner-logic-ceo-porras-explains-how-autonomous-surgery-can-save-us-from-looming-surgeon-shortage" target="_blank" rel="noopener">DeviceTalks podcast: Tito Porras on autonomous surgery</a></li>
+      </ol>
+    </section>
+    <footer class="end">Prepared by Jessie Lin (MIT 2028) for J2 Ventures, November 2026. Company facts and expert quotes are from public sources linked above; scores, assumptions and opinions are my own.</footer>
+  </main>
+</div>
+
+<script>
+(function () {
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+
+  const railLinks = Array.from(document.querySelectorAll('#rail a'));
+
+  /* ---------- Scroll progress and active section ---------- */
+  const prog = document.getElementById('progress');
+  const onScroll = () => {
+    const h = document.documentElement.scrollHeight - window.innerHeight;
+    prog.style.width = (h > 0 ? Math.min(100, (window.scrollY / h) * 100) : 0) + '%';
+  };
+  window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  const secs = Array.from(document.querySelectorAll('[data-sec]'));
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) railLinks.forEach((a) => a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id));
+      });
+    }, { rootMargin: '-30% 0px -60% 0px' });
+    secs.forEach((s) => io.observe(s));
+  }
+
+  /* ---------- Market map ---------- */
+  const LAYERS = [
+    { id: 'found', name: 'Foundation models', note: 'General-purpose robot AI, not medical-specific' },
+    { id: 'sim', name: 'Simulation & data', note: 'Virtual patients, surgical video, dexterity data' },
+    { id: 'plat', name: 'Robotic platforms', note: 'Surgical and interventional robots' },
+    { id: 'poc', name: 'Point-of-care & field', note: 'Devices that act on patients outside the OR' },
+    { id: 'inc', name: 'Incumbents & likely acquirers', note: 'Device makers and simulation software companies that buy, partner or compete' }
+  ];
+  const CO = [
+    { n: 'Physical Intelligence', l: 'found', t: 'ctx', role: 'Context', what: 'General-purpose AI for robots. Raised $600M (Nov 2025).', stage: 'Late venture', url: 'https://www.heyfuturenexus.com/posts/physical-ais-picks-and-shovels-moment' },
+    { n: 'Archetype AI', l: 'found', t: 'ctx', role: 'Context', what: 'Newton, a foundation model that reasons over real-world sensor data.', stage: 'Venture', url: 'https://www.silicon.co.uk/press-release/archetype-ai-introduces-foundation-model-to-pioneer-physical-ai' },
+    { n: 'Inner Logic', l: 'sim', t: 'j2', role: 'J2 portfolio', what: 'Virtual patients built from real procedural data to test devices and train autonomous surgical systems.', stage: 'Seed · $11.5M (Jul 2026)', url: 'https://pulse2.com/inner-logic-raises-11-5-million-seed-round-to-build-simulation-infrastructure-for-procedural-devices/' },
+    { n: 'adsilico', l: 'sim', t: 'comp', role: 'Competitor to Inner Logic', what: 'AI simulation of device performance across virtual patient populations.', stage: 'Series A · £10M (Oct 2026)', url: 'https://tech.eu/2026/10/26/leeds-ai-spinout-adsilico-raises-ps10m-to-test-medical-devices-on-virtual-patients/' },
+    { n: 'Virtonomy', l: 'sim', t: 'comp', role: 'Competitor to Inner Logic', what: 'Digital patient replicas for in silico device trials.', stage: 'Venture · >€5M', url: 'https://ipfray.com/beyond-a-simple-balance-sheet-figure-how-a-med-tech-start-up-leveraged-its-patents-to-raise-over-e5-million/' },
+    { n: 'Kitware', l: 'sim', t: 'comp', role: 'Public testbed', what: 'Building an open simulation testbed for ARPA-H’s autonomous stroke robots.', stage: 'Government performer', url: 'https://evtoday.com/news/arpa-h-funding-will-support-teams-to-advance-robotics-stroke-interventions' },
+    { n: 'Uncovr', l: 'sim', t: 'watch', role: 'Watchlist', what: 'Turns surgical video into structured records across hundreds of operating rooms.', stage: 'Seed · $7M (Jun 2026)', url: 'https://indexventures.com/perspectives/uncovr-raises-7-million-in-seed-funding-to-build-the-system-of-record-for-surgery/' },
+    { n: 'Lupa Robotics', l: 'sim', t: 'short', role: 'Shortlist', what: 'Glove-captured vision, touch and motion data for robot-hand foundation models.', stage: 'Accelerator', url: 'https://www.therobotreport.com/meet-massrobotics-5th-healthcare-robotics-startup-catalyst-cohort/' },
+    { n: 'Theator', l: 'sim', t: 'short', role: 'Shortlist', what: 'Surgical video platform with more than 30,000 hours of video analyzed by computer vision.', stage: 'Series A \u00b7 $39.5M', url: 'https://hitconsultant.net/2022/07/25/theator-surgical-intelligence-funding' },
+    { n: 'Caresyntax', l: 'sim', t: 'ctx', role: 'Context', what: 'Surgical data platform that collects and analyzes operating-room data.', stage: 'Series C \u00b7 $180M incl. debt (2024)', url: 'https://www.massdevice.com/caresyntax-raises-180m-ai-surgical-software/' },
+    { n: 'Physicl', l: 'found', t: 'ctx', role: 'Context', what: 'Synthetic 3D training environments for robots and physical AI; no medical customers yet.', stage: 'Seed \u00b7 $10M (Nov 2026)', url: 'https://www.globalstartupsinsights.com/funding/physicl-raises-10-million-in-seed-round-to-build-synthetic-training-data-for-physical-ai/' },
+    { n: 'Magnendo', l: 'plat', t: 'short', role: 'Shortlist', what: 'Magnetically steered guidewires toward autonomous stroke intervention.', stage: 'Series A · $18M + ARPA-H up to $32M', url: 'https://medtechinnovator.org/magnendo-awarded-up-to-32m-by-arpa-h-to-advance-autonomous-robotic-stroke-intervention/' },
+    { n: 'Parallel Robotics', l: 'plat', t: 'watch', role: 'Watchlist', what: 'FDA-cleared handheld laparoscopic needle driver.', stage: 'Early · $7.3M per SEC filing', url: 'https://runtimewire.com/article/shorya-awtar-parallel-robotics-7-3m-handheld-surgical-robotics' },
+    { n: 'Channel Robotics', l: 'plat', t: 'watch', role: 'Watchlist', what: 'Handheld AI endoscopic robot that works with existing scopes.', stage: 'Seed+ · $4.6M total', url: 'https://dealroom.co/news/135152-channel-robotics-raises-2-5m-seed-to-bring-handheld-endoscopic-robotics/' },
+    { n: 'Revolve Surgical', l: 'plat', t: 'watch', role: 'Watchlist', what: 'Zero-footprint, table-mounted surgical robot; FDA 510(k) cleared. Toronto-based.', stage: 'Pre-seed / accelerator', url: 'https://www.massrobotics.org/revolve-surgical-wins-fda-clearance-for-surgical-robot/' },
+    { n: 'Galen Robotics', l: 'plat', t: 'watch', role: 'Watchlist', what: 'Johns Hopkins spinout pairing a collaborative robot with surgical data capture.', stage: 'Series A · $15M', url: 'https://beckershospitalreview.com/innovation/johns-hopkins-surgical-spinoff-galen-robotics-lands-15m.html' },
+    { n: 'Virtual Incision', l: 'plat', t: 'ctx', role: 'Late-stage comp', what: 'Miniaturized surgical robot funded in part by NASA and the U.S. Army.', stage: 'Series C · ~$146M total', url: 'https://www.techbriefs.com/component/content/article/55003-robots-in-the-operating-room' },
+    { n: 'AutonomUS', l: 'poc', t: 'short', role: 'Shortlist', what: 'AI-guided handheld robot for vascular access by non-specialists; born from a Defense Health Agency request.', stage: 'Venture (round undisclosed)', url: 'https://www.ll.mit.edu/news/life-saving-lincoln-laboratory-technology-wins-2026-excellence-technology-transfer-award' },
+    { n: 'Dopl Technologies', l: 'poc', t: 'short', role: 'Shortlist', what: 'Telerobotic ultrasound so remote sonographers can scan patients.', stage: 'Seed · $6.3M (Jul 2026)', url: 'https://pulse2.com/dopl-technologies-raises-6-3-million-to-advance-telerobotic-ultrasound-toward-fda-clearance/' },
+    { n: 'Phantom Neuro', l: 'poc', t: 'watch', role: 'Watchlist', what: 'AI decodes muscle signals to control prosthetic limbs.', stage: 'Series A · $19M', url: 'https://techcrunch.com/2025/04/15/phantom-neuro-grabs-19m-to-help-amputees-gain-control-of-their-phantom-limbs' },
+    { n: 'Blue Arbor', l: 'poc', t: 'watch', role: 'Watchlist', what: 'Neuromuscular interfaces for people with limb loss.', stage: 'Series A · $10.5M', url: 'https://www.webull.com/news/15826018963883008' },
+    { n: 'Vexev', l: 'poc', t: 'watch', role: 'Watchlist', what: 'Autonomous vascular ultrasound run by non-specialist staff. Australia-based.', stage: 'Venture · $19M total', url: 'https://hitconsultant.net/2026/08/24/vexev-raises-6m-autonomous-robotic-vascular-imaging-platform-vxwave/' },
+    { n: 'Intuitive Surgical', l: 'inc', t: 'inc', role: 'Device incumbent', what: 'Maker of the da Vinci system, the market leader in robotic surgery. Johns Hopkins\u2019 autonomy research trains on da Vinci video and hardware.', stage: 'Public company', url: 'https://hub.jhu.edu/2024/11/11/surgery-robots-trained-with-videos/' },
+    { n: 'Medtronic', l: 'inc', t: 'inc', role: 'Device incumbent', what: 'Hugo robotic-assisted surgery system, FDA-cleared for urologic procedures in December 2025.', stage: 'Public company', url: 'https://news.medtronic.com/2025-12-03-Medtronic-announces-FDA-clearance-of-Hugo-TM-robotic-assisted-surgery-system-for-urologic-surgical-procedures' },
+    { n: 'J&J MedTech', l: 'inc', t: 'inc', role: 'Device incumbent · acquirer', what: 'Bought Auris Health (Monarch robotic bronchoscopy) in 2019 for $3.4B upfront plus up to $2.35B in milestones.', stage: 'Public company', url: 'https://www.therobotreport.com/jj-acquires-auris-health-34b/' },
+    { n: 'Stryker', l: 'inc', t: 'inc', role: 'Device incumbent · acquirer', what: 'Bought MAKO Surgical, maker of the Mako orthopedic robot, in 2013 for about $1.65B.', stage: 'Public company', url: 'https://www.sec.gov/Archives/edgar/data/0001411861/000089882213000375/ex99-1.htm' },
+    { n: 'Siemens Healthineers', l: 'inc', t: 'inc', role: 'Device incumbent · acquirer', what: 'Bought Corindus Vascular Robotics in 2019 for $1.1B in cash. Now an ARPA-H performer for autonomous endovascular surgery.', stage: 'Public company', url: 'https://cardiovascularbusiness.com/topics/healthcare-management/healthcare-economics/siemens-healthineers-acquires-corindus-11b' },
+    { n: 'Philips', l: 'inc', t: 'inc', role: 'Device incumbent', what: 'ARPA-H performer combining a steerable catheter with imitation learning for autonomous interventions.', stage: 'Public company', url: 'https://arpa-h.gov/news-and-events/arpa-h-funded-teams-transform-life-saving-stroke-interventions-autonomous-robotic' },
+    { n: 'Penumbra', l: 'inc', t: 'inc', role: 'Strategic investor', what: 'Led Magnendo\u2019s $18M Series A: an incumbent buying into autonomy early.', stage: 'Public company', url: 'https://www.massdevice.com/magnendo-18m-magnetic-robotic-tech-penumbra/' },
+    { n: 'Ottobock', l: 'inc', t: 'inc', role: 'Strategic investor', what: 'Prosthetics leader that led Phantom Neuro\u2019s and Blue Arbor\u2019s Series A rounds.', stage: 'Prosthetics and bionics maker', url: 'https://www.massdevice.com/phantom-neuro-raises-19m-series-a-for-neural-interface/' },
+    { n: 'Dassault Syst\u00e8mes', l: 'inc', t: 'inc', role: 'Simulation software', what: 'Runs the Living Heart Project and builds virtual human subjects with the FDA. A natural buyer or rival for Inner Logic.', stage: 'Public company', url: 'https://www.rdworldonline.com/how-the-living-heart-project-could-transform-fdas-approach-to-medical-device-testing/' },
+    { n: 'Synopsys (Ansys)', l: 'inc', t: 'inc', role: 'Simulation software', what: 'Paid $35B for Ansys, the largest engineering-simulation company, closing in July 2025.', stage: 'Public company', url: 'https://www.manufacturingdive.com/news/chip-design-software-maker-synopsys-completes-35b-deal-ansys/753321/' }
+  ];
+  const tagClass = { j2: 't-j2', short: 't-short', watch: 't-watch', comp: 't-comp', ctx: 't-ctx', inc: 't-inc' };
+  const tagColor = { j2: 'var(--j2)', short: 'var(--accent)', watch: 'var(--accent)', comp: 'var(--warn)', ctx: 'var(--muted)', inc: 'var(--ink)' };
+  const layersEl = document.getElementById('layers');
+  const detailEl = document.getElementById('detail');
+  const btns = [];
+  LAYERS.forEach((L) => {
+    const row = document.createElement('div'); row.className = 'layer';
+    const nm = document.createElement('div'); nm.className = 'layer-name';
+    const b = document.createElement('b'); b.textContent = L.name;
+    const s = document.createElement('span'); s.textContent = L.note;
+    nm.append(b, s);
+    const cos = document.createElement('div'); cos.className = 'layer-cos';
+    CO.filter((c) => c.l === L.id).forEach((c) => {
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'co ' + tagClass[c.t]; btn.setAttribute('aria-pressed', 'false');
+      const i = document.createElement('i'); btn.append(i, document.createTextNode(c.n));
+      btn.addEventListener('click', () => select(c, btn));
+      btn._c = c; btns.push(btn); cos.appendChild(btn);
+    });
+    row.append(nm, cos); layersEl.appendChild(row);
+  });
+  function select(c, btn) {
+    btns.forEach((b) => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'));
+    detailEl.replaceChildren();
+    const k = document.createElement('span'); k.className = 'k'; k.textContent = LAYERS.find((L) => L.id === c.l).name;
+    const h = document.createElement('h3'); h.textContent = c.n;
+    const p = document.createElement('span'); p.className = 'pill'; p.style.color = tagColor[c.t]; p.textContent = c.role;
+    const w = document.createElement('p'); w.textContent = c.what;
+    const st = document.createElement('p'); st.className = 'small muted'; st.textContent = c.stage;
+    const a = document.createElement('a'); a.href = c.url; a.target = '_blank'; a.rel = 'noopener'; a.className = 'small'; a.textContent = 'Read the source ↗';
+    detailEl.append(k, h, p, w, st, a);
+  }
+  const ilBtn = btns.find((b) => b._c.n === 'Inner Logic');
+  select(ilBtn._c, ilBtn);
+  document.querySelectorAll('.chipbtn').forEach((cb) => cb.addEventListener('click', () => {
+    document.querySelectorAll('.chipbtn').forEach((x) => x.setAttribute('aria-pressed', x === cb ? 'true' : 'false'));
+    const f = cb.dataset.filter;
+    btns.forEach((b) => b.classList.toggle('dim', f !== 'all' && b._c.t !== f));
+  }));
+
+})();
+</script>
+
+</body></html>
