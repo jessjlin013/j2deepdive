@@ -1,0 +1,305 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Simulation & Validation Sourcing Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: companion to the brief. One column of cards: summary tiles, two charts, landscape, full table, programs. */
+:root {
+  --bg: #F3F6F6; --surface: #FFFFFF; --ink: #14202A; --muted: #576672; --line: #D3DCDF;
+  --accent: #1D6B60; --accent-soft: #DDEDE9; --j2: #2F4F8F; --j2-soft: #E2E8F5;
+  --watch: #6E8F89; --land: #A3AFB6; --warn: #9A3B2E;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace; --r: 6px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0E151A; --surface: #152027; --ink: #E4EBED; --muted: #9AA9B2; --line: #283640;
+  --accent: #5DC0AE; --accent-soft: #17332E; --j2: #93AEEA; --j2-soft: #1B2740; --watch: #7FA59D; --land: #5E6E78; --warn: #E58A7C; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0E151A; --surface: #152027; --ink: #E4EBED; --muted: #9AA9B2; --line: #283640;
+  --accent: #5DC0AE; --accent-soft: #17332E; --j2: #93AEEA; --j2-soft: #1B2740; --watch: #7FA59D; --land: #5E6E78; --warn: #E58A7C; color-scheme: dark; }
+* { box-sizing: border-box; }
+html { padding-top: env(safe-area-inset-top, 0px); }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.55; }
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible, select:focus-visible, th:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.15; }
+p { margin: 0; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 32px 72px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 24px; }
+.back { font-family: var(--mono); font-size: 12px; letter-spacing: .05em; text-transform: uppercase; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-size: clamp(30px, 4.6vw, 46px); font-weight: 600; letter-spacing: -.01em; }
+h2 { font-size: 22px; font-weight: 600; }
+.lede { font-size: 17px; max-width: 68ch; }
+.sub { font-size: 14px; color: var(--muted); max-width: 80ch; }
+.cap { font-size: 13px; color: var(--muted); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.tile .k { font-size: 13px; color: var(--muted); }
+.tile .n { font-family: var(--display); font-size: 38px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.chart { position: relative; min-width: 0; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { fill: var(--muted); font-family: var(--body); font-size: 12px; }
+.chart text.lab { fill: var(--ink); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 4px 16px rgba(0,0,0,.12); border-radius: var(--r); padding: 8px 10px; font-size: 12px; max-width: 220px; z-index: 5; }
+.tip b { display: block; font-size: 13px; color: var(--ink); }
+.tip span { color: var(--muted); display: block; }
+.ls-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.ls { border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; background: var(--bg); min-width: 0; }
+.ls.il { border: 2px solid var(--j2); background: var(--j2-soft); }
+.ls h3 { font-size: 17px; }
+.ls .meta { color: var(--muted); }
+.ls .vs { border-top: 1px solid var(--line); padding-top: 6px; margin-top: auto; }
+.ls .vs b { color: var(--accent); }
+.pos { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; font-size: 14px; }
+.pos h3 { font-size: 17px; margin-bottom: 6px; }
+.pos ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chip { font: 500 13px var(--body); padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 500; white-space: nowrap; }
+th[data-sort] { cursor: pointer; user-select: none; }
+th[data-sort]::after { content: " \2195"; opacity: .4; }
+th[aria-sort="ascending"]::after { content: " \2191"; opacity: 1; }
+th[aria-sort="descending"]::after { content: " \2193"; opacity: 1; }
+tr:last-child td { border-bottom: 0; }
+table.big { min-width: 1500px; }
+td.co { font-weight: 600; min-width: 150px; }
+td.long { min-width: 220px; }
+td.num { font-variant-numeric: tabular-nums; font-family: var(--mono); }
+.pill { display: inline-block; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; padding: 1px 7px; border-radius: 3px; border: 1px solid currentColor; white-space: nowrap; }
+.flag { color: var(--warn); }
+details { font-size: 14px; color: var(--muted); }
+details summary { cursor: pointer; color: var(--ink); font-weight: 500; }
+details p { margin-top: 8px; max-width: 80ch; }
+footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+</style></head><body>
+<div class="wrap">
+  <a class="back" href="index.html">&larr; Back to the deep dive</a>
+  <header style="display:flex;flex-direction:column;gap:10px">
+    <div class="eyebrow">Sourcing tracker · Prepared for J2 Ventures · November 2026</div>
+    <h1>Simulation &amp; Validation for Medical Physical AI: Sourcing Tracker</h1>
+    <p class="lede" id="lede"></p>
+    <p class="sub">Thesis: the bottleneck for medical physical AI is simulation training and validation. The shortlist holds two kinds of company: those that build that layer (simulation and data), and autonomous-device makers that need it, who are natural customers for Inner Logic. Tier is set by thesis fit. The score out of 30 (team, moat, dual-use pull, commercial market, regulatory progress, stage fit) is a separate first-pass judgment, so a well-scored company can sit on the watchlist when its link to the thesis is weak. Sourced November 2026 from funding news, DARPA and ARPA-H programs, lab spinouts and the MassRobotics healthcare cohort.</p>
+  </header>
+
+  <section class="tiles" id="tiles"></section>
+
+  <section class="charts">
+    <div class="card" id="ranking">
+      <h2>Total score by company</h2>
+      <p class="cap">Sum of six 1–5 scores (max 30). Shortlist and watchlist only.</p>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Shortlist</span><span><i style="background:var(--watch)"></i>Watchlist</span></div>
+      <div class="chart" id="bars"></div>
+    </div>
+    <div class="card" id="fitmap">
+      <h2>Dual-use pull vs. stage fit</h2>
+      <p class="cap">Top right is the sweet spot: a real defense angle at a stage J2 can still lead or join. Dot size is total score; overlapping dots are nudged apart.</p>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Shortlist</span><span><i style="background:var(--watch)"></i>Watchlist</span></div>
+      <div class="chart" id="scatter"></div>
+    </div>
+  </section>
+
+  <section class="card" id="landscape">
+    <h2>Landscape: Inner Logic and its competitors</h2>
+    <p class="cap">Inner Logic is already backed by J2, so these companies are context, not picks. They aren't scored or ranked above.</p>
+    <div class="ls-grid" id="lsCards"></div>
+    <div class="pos">
+      <div>
+        <h3>Where Inner Logic leads</h3>
+        <ul>
+          <li><b>Built for physical AI, not only device testing.</b> adsilico and Virtonomy pitch virtual patients for checking how a device performs. Inner Logic also trains and validates autonomous surgical systems, and its team has moved orthopedic trauma models trained only in simulation onto real hardware.</li>
+          <li><b>A clinical-plus-robotics team.</b> A neurosurgeon CEO with Johns Hopkins computer vision and surgical robotics researchers, including the robotics lead whose robot performed the first autonomous laparoscopic surgery in a live animal.</li>
+          <li><b>U.S.-based.</b> Both direct competitors are European. Being close to the FDA and to U.S. defense medicine buyers matters for J2's dual-use thesis.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Where it is exposed</h3>
+        <ul>
+          <li><b>Less capital than its closest rival.</b> adsilico has already raised a Series A; Inner Logic is at seed.</li>
+          <li><b>An open, government-funded testbed.</b> If Kitware's ARPA-H simulator becomes the free standard for endovascular autonomy, Inner Logic has to win on data quality and regulatory-grade evidence, not on access to simulation.</li>
+          <li><b>Unproven regulatory value.</b> No public device submission has used Inner Logic's evidence yet. The same question applies to every company here, so the first to get simulation evidence accepted by the FDA gains a lasting edge.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="candidates">
+    <h2>All candidates</h2>
+    <p class="cap">Click a column header to sort. Each company name links to the source used for its facts.</p>
+    <div class="controls" role="group" aria-label="Filter by tier">
+      <button class="chip" type="button" data-tier="" aria-pressed="true">All tiers</button>
+      <button class="chip" type="button" data-tier="Shortlist" aria-pressed="false">Shortlist</button>
+      <button class="chip" type="button" data-tier="Watchlist" aria-pressed="false">Watchlist</button>
+      <button class="chip" type="button" data-tier="Landscape" aria-pressed="false">Landscape</button>
+    </div>
+    <div class="tablewrap">
+      <table class="big">
+        <thead><tr>
+          <th data-sort="company" tabindex="0">Company</th><th data-sort="tier" tabindex="0">Tier</th><th data-sort="role" tabindex="0">Role</th><th data-sort="thesis_fit" tabindex="0">Thesis fit</th><th data-sort="_total" tabindex="0" aria-sort="descending">Score</th>
+          <th>Connection to thesis</th><th data-sort="layer" tabindex="0">Layer</th><th data-sort="hq" tabindex="0">HQ</th><th>Stage</th><th>Capital</th><th>Investors</th><th>Dual-use signal</th><th>Regulatory</th><th>Relation to Inner Logic</th><th>Why it fits</th><th>Why J2 might pass</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card" id="programs">
+    <h2>Programs to mine for more companies</h2>
+    <p class="cap">Government programs and accelerators whose award or team lists are ready-made sourcing lists for J2's thesis.</p>
+    <div class="tablewrap">
+      <table style="min-width:900px">
+        <thead><tr><th>Program</th><th>Run by</th><th>What it funds</th><th>Timing</th><th>Why it matters for sourcing</th></tr></thead>
+        <tbody id="pbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <details>
+    <summary>How the scores work</summary>
+    <p>Team: clinical and technical depth. Moat: proprietary data, hardware or validated models. Dual-use pull: a named DoD or federal program, contract or clear field-care use. Commercial: who pays outside government. Regulatory: progress toward clearance (5 = cleared, Breakthrough, or not a regulated device). Stage fit: whether J2 could plausibly lead or join the next round (5 = seed or earlier). Each is a 1–5 judgment from public sources only, to adjust after founder and expert conversations. Flagged entries (⚑) are outside the U.S. Landscape entries are competitors to Inner Logic or later-stage comparisons, shown for context and left out of the ranking.</p>
+  </details>
+  <footer>Prepared by Jessie Lin (MIT 2028) for J2 Ventures. Company facts are from the public sources linked in the table; scores and opinions are my own.</footer>
+</div>
+
+<script type="application/json" id="data">{"candidates": [{"company": "AutonomUS Medical Technologies", "tier": "Shortlist", "role": "Needs the layer", "thesis_fit": "Strong", "connection": "An autonomous device for the battlefield can't be tested on wounded soldiers, so validation across anatomies has to happen in simulation.", "layer": "Field-care robotics", "hq": "Boston, MA", "us_based": "Yes", "stage": "Series A (per Caplight)", "raised_usd_m": "", "raised_note": "Undisclosed", "investors": "Engine Ventures; MassVentures", "dual_use_signal": "DHA Combat Casualty Care funding; MIT Lincoln Lab + MGH origin", "regulatory": "FDA Breakthrough Device designation", "inner_logic_relation": "Complement: a natural simulation customer", "why_fit": "AI-guided handheld robot for vascular access by non-specialists; born from a DoD request and already non-dilutively funded. Boston-based, squarely J2's thesis.", "why_pass": "Round size and timing undisclosed; may already be syndicated by Engine.", "team": "5", "moat": "4", "dual_use": "5", "commercial": "4", "regulatory_score": "4", "stage_fit": "3", "source": "https://www.ll.mit.edu/news/life-saving-lincoln-laboratory-technology-wins-2026-excellence-technology-transfer-award"}, {"company": "Magnendo", "tier": "Shortlist", "role": "Needs the layer", "thesis_fit": "Strong", "connection": "Autonomous navigation must be validated across thousands of vessel anatomies; endovascular is a named Inner Logic use case.", "layer": "Endovascular autonomy", "hq": "Newton, MA", "us_based": "Yes", "stage": "Series A", "raised_usd_m": "18", "raised_note": "$18M Series A (Jul 2026) + ARPA-H award up to $32M", "investors": "Penumbra (lead)", "dual_use_signal": "ARPA-H AIR performer (HHS, not DoD)", "regulatory": "Preclinical; preparing first-in-human", "inner_logic_relation": "Complement: endovascular devices are an Inner Logic use case", "why_fit": "MIT spinout with a credible path to autonomous stroke intervention and large non-dilutive backing.", "why_pass": "Strategic-led round; defense pull is indirect; next round may be large.", "team": "5", "moat": "4", "dual_use": "3", "commercial": "5", "regulatory_score": "3", "stage_fit": "2", "source": "https://medtechinnovator.org/magnendo-awarded-up-to-32m-by-arpa-h-to-advance-autonomous-robotic-stroke-intervention/"}, {"company": "Dopl Technologies", "tier": "Shortlist", "role": "Needs the layer", "thesis_fit": "Moderate", "connection": "Remote scans build a data set today and a path to autonomous scanning later.", "layer": "Telerobotics", "hq": "Bothell, WA", "us_based": "Yes", "stage": "Seed", "raised_usd_m": "8", "raised_note": "$6.3M seed (Jul 2026); >$8M total", "investors": "SpringTide Ventures (lead); WRF Capital; Tacoma Venture Fund; Precursor", "dual_use_signal": "Remote operation fits austere/forward care; no DoD contract found", "regulatory": "Pursuing FDA clearance", "inner_logic_relation": "Complement", "why_fit": "Seed-stage telerobotic ultrasound with haptics; remote expertise is a core military medicine need.", "why_pass": "Rural-hospital services model; no defense customer yet.", "team": "4", "moat": "3", "dual_use": "3", "commercial": "4", "regulatory_score": "3", "stage_fit": "5", "source": "https://pulse2.com/dopl-technologies-raises-6-3-million-to-advance-telerobotic-ultrasound-toward-fda-clearance/"}, {"company": "Lupa Robotics", "tier": "Shortlist", "role": "Builds the layer", "thesis_fit": "Strong", "connection": "Dexterity data is the raw material for training surgical and prosthetic hands in simulation.", "layer": "Data for physical AI", "hq": "San Francisco, CA", "us_based": "Yes", "stage": "Accelerator", "raised_usd_m": "", "raised_note": "Accelerator only (MassRobotics cohort 5)", "investors": "MassRobotics Healthcare Catalyst", "dual_use_signal": "General dexterity data; prosthetics and surgical-hand relevance", "regulatory": "Not a device", "inner_logic_relation": "Complement: human-dexterity data layer", "why_fit": "Glove-captured vision, touch and motion dataset for robot-hand foundation models; very early and likely raising.", "why_pass": "Pre-product; crowded glove-data space.", "team": "3", "moat": "3", "dual_use": "3", "commercial": "3", "regulatory_score": "4", "stage_fit": "5", "source": "https://www.therobotreport.com/meet-massrobotics-5th-healthcare-robotics-startup-catalyst-cohort/"}, {"company": "Theator", "tier": "Shortlist", "role": "Builds the layer", "thesis_fit": "Strong", "connection": "The kind of surgical video library that imitation-learning systems like SRT-H train on.", "layer": "Surgical video data", "hq": "To confirm", "us_based": "To confirm", "stage": "Series A (2022; confirm current)", "raised_usd_m": "39.5", "raised_note": "$39.5M Series A (2021\u201322)", "investors": "Insight Partners (lead); Blumberg Capital; Mayo Clinic; NFX", "dual_use_signal": "None found", "regulatory": "Analytics software", "inner_logic_relation": "Complement: video data could feed simulation and robot training", "why_fit": "Reports more than 30,000 hours of surgical video analyzed with computer vision.", "why_pass": "Last public round in 2022; HQ and current stage need confirming.", "team": "4", "moat": "5", "dual_use": "2", "commercial": "4", "regulatory_score": "4", "stage_fit": "2", "source": "https://hitconsultant.net/2022/07/25/theator-surgical-intelligence-funding"}, {"company": "Parallel Robotics", "tier": "Watchlist", "role": "Device maker", "thesis_fit": "Weak", "connection": "Surgeon-controlled, with no autonomy or data angle yet.", "layer": "Handheld surgical robotics", "hq": "Michigan", "us_based": "Yes", "stage": "Early (SEC Form D)", "raised_usd_m": "7.3", "raised_note": "$7.3M sold per SEC filing", "investors": "Undisclosed", "dual_use_signal": "Federal research funding (agency not specified in source)", "regulatory": "FDA-cleared (MediBot needle driver)", "inner_logic_relation": "Neutral", "why_fit": "Cleared product plus a repeat founder; low-cost handheld form factor suits austere settings.", "why_pass": "Defense angle is a hypothesis to test; investor base unclear.", "team": "4", "moat": "3", "dual_use": "3", "commercial": "3", "regulatory_score": "5", "stage_fit": "4", "source": "https://runtimewire.com/article/shorya-awtar-parallel-robotics-7-3m-handheld-surgical-robotics"}, {"company": "Phantom Neuro", "tier": "Watchlist", "role": "Device maker", "thesis_fit": "Weak to moderate", "connection": "Its validation problem is per-user prosthetic control, not procedures. Strong bionics link.", "layer": "Prosthetics & neural interfaces", "hq": "Austin, TX", "us_based": "Yes", "stage": "Series A", "raised_usd_m": "28", "raised_note": "$19M Series A (Apr 2025); $28M total", "investors": "Ottobock (lead); Johns Hopkins; Intel", "dual_use_signal": "Limb-loss population includes veterans; no DoD contract found in this search", "regulatory": "FDA Breakthrough + TAP", "inner_logic_relation": "Neutral", "why_fit": "AI decodes muscle intent to drive prosthetics; ties directly to the Hugh Herr / bionics thread.", "why_pass": "Strategic (Ottobock) already anchors; next round likely Series B.", "team": "4", "moat": "4", "dual_use": "4", "commercial": "4", "regulatory_score": "4", "stage_fit": "2", "source": "https://techcrunch.com/2025/04/15/phantom-neuro-grabs-19m-to-help-amputees-gain-control-of-their-phantom-limbs"}, {"company": "Channel Robotics", "tier": "Watchlist", "role": "Device maker", "thesis_fit": "Weak", "connection": "Handheld robot with AI assistance; no autonomy validation need yet.", "layer": "Handheld surgical robotics", "hq": "San Diego, CA", "us_based": "Yes", "stage": "Seed+", "raised_usd_m": "4.6", "raised_note": "$4.6M total (Seed + Seed+, Jun 2026)", "investors": "True Ventures (lead); Defined; Old Line Capital", "dual_use_signal": "None found", "regulatory": "FDA submission targeted 2027", "inner_logic_relation": "Complement: shares an investor (Defined) with Inner Logic", "why_fit": "Handheld AI endoscopic robot that works with existing scopes; capital-efficient.", "why_pass": "Weak dual-use story.", "team": "3", "moat": "3", "dual_use": "2", "commercial": "4", "regulatory_score": "3", "stage_fit": "5", "source": "https://dealroom.co/news/135152-channel-robotics-raises-2-5m-seed-to-bring-handheld-endoscopic-robotics/"}, {"company": "Blue Arbor Technologies", "tier": "Watchlist", "role": "Device maker", "thesis_fit": "Weak", "connection": "Neural interface; a per-user control problem rather than procedural validation.", "layer": "Prosthetics & neural interfaces", "hq": "Michigan", "us_based": "Yes", "stage": "Series A", "raised_usd_m": "10.5", "raised_note": "$10.5M Series A", "investors": "Ottobock (lead)", "dual_use_signal": "Limb-loss / veterans relevance", "regulatory": "Feasibility and U.S. clinical studies ahead", "inner_logic_relation": "Neutral", "why_fit": "Neuromuscular interfaces for limb loss; a second bionics bet next to Phantom Neuro.", "why_pass": "Earlier clinical stage; strategic anchor.", "team": "4", "moat": "4", "dual_use": "4", "commercial": "3", "regulatory_score": "2", "stage_fit": "3", "source": "https://www.webull.com/news/15826018963883008"}, {"company": "Galen Robotics", "tier": "Watchlist", "role": "Needs the layer", "thesis_fit": "Moderate", "connection": "Pairs a collaborative robot with surgical data capture, a possible data and simulation partner.", "layer": "Surgical robotics", "hq": "Baltimore, MD", "us_based": "Yes", "stage": "Series A", "raised_usd_m": "15", "raised_note": "$15M Series A", "investors": "Undisclosed in source", "dual_use_signal": "None found", "regulatory": "Submitted to FDA", "inner_logic_relation": "Complement: same JHU ecosystem as Inner Logic", "why_fit": "JHU spinout pairing a collaborative robot with surgical data capture (digital-surgery-as-a-service).", "why_pass": "Older company (2016); dual-use weak.", "team": "4", "moat": "3", "dual_use": "2", "commercial": "3", "regulatory_score": "4", "stage_fit": "3", "source": "https://beckershospitalreview.com/innovation/johns-hopkins-surgical-spinoff-galen-robotics-lands-15m.html"}, {"company": "Revolve Surgical", "tier": "Watchlist", "role": "Needs the layer", "thesis_fit": "Moderate", "connection": "States a goal of physical AI in every OR; any autonomy would need validation.", "layer": "Surgical robotics", "hq": "Toronto, Canada", "us_based": "No", "stage": "Pre-seed / accelerator", "raised_usd_m": "0.13", "raised_note": "~$125K disclosed", "investors": "Y Combinator; Creative Destruction Lab; MassRobotics cohort", "dual_use_signal": "Compact form factor could suit forward surgical teams (hypothesis)", "regulatory": "FDA 510(k) cleared (Mar 2026)", "inner_logic_relation": "Complement", "why_fit": "Zero-footprint table-mounted robot with a stated physical-AI goal; cleared and likely raising.", "why_pass": "Canadian HQ falls outside J2's U.S. mandate.", "team": "3", "moat": "3", "dual_use": "3", "commercial": "4", "regulatory_score": "4", "stage_fit": "4", "source": "https://www.massrobotics.org/revolve-surgical-wins-fda-clearance-for-surgical-robot/"}, {"company": "Uncovr", "tier": "Watchlist", "role": "Builds the layer", "thesis_fit": "Strong", "connection": "Structured OR data is what validation needs to be grounded in real procedures. Outside the U.S. mandate as-is.", "layer": "Surgical data", "hq": "Europe", "us_based": "No", "stage": "Seed", "raised_usd_m": "7", "raised_note": "$7M seed (Jun 2026)", "investors": "Index Ventures (lead); Seedcamp", "dual_use_signal": "None found", "regulatory": "Documentation software", "inner_logic_relation": "Complement: surgical video is training data", "why_fit": "Turns surgical video into structured records across hundreds of ORs; the data layer physical AI needs.", "why_pass": "European HQ; revenue-cycle framing, not defense.", "team": "4", "moat": "4", "dual_use": "2", "commercial": "4", "regulatory_score": "4", "stage_fit": "3", "source": "https://indexventures.com/perspectives/uncovr-raises-7-million-in-seed-funding-to-build-the-system-of-record-for-surgery/"}, {"company": "Vexev", "tier": "Watchlist", "role": "Needs the layer", "thesis_fit": "Moderate", "connection": "Autonomous scanning already in use; broader autonomy would need validation across patients.", "layer": "Autonomous imaging", "hq": "Australia", "us_based": "No", "stage": "Venture", "raised_usd_m": "19", "raised_note": "$6M new (Aug 2026); $19M total", "investors": "Blackbird; Neotribe; Alumni Ventures", "dual_use_signal": "None found", "regulatory": "Pursuing FDA 510(k)", "inner_logic_relation": "Neutral", "why_fit": "Autonomous vascular ultrasound run by non-specialists, with a 94% success rate in a U.S. feasibility study.", "why_pass": "Non-U.S. HQ; dialysis focus.", "team": "4", "moat": "3", "dual_use": "3", "commercial": "4", "regulatory_score": "3", "stage_fit": "3", "source": "https://hitconsultant.net/2026/08/24/vexev-raises-6m-autonomous-robotic-vascular-imaging-platform-vxwave/"}, {"company": "ClearCam", "tier": "Watchlist", "role": "Device maker", "thesis_fit": "Weak", "connection": "Visualization tool; limited link to simulation or validation.", "layer": "Surgical visualization", "hq": "Unknown", "us_based": "Yes", "stage": "Early", "raised_usd_m": "0.074", "raised_note": "$74K AFWERX SBIR Phase I (grant)", "investors": "AFWERX / AFRL", "dual_use_signal": "Air Force SBIR for military surgical readiness", "regulatory": "Unknown", "inner_logic_relation": "Neutral", "why_fit": "Already pursuing an Air Force use case; a small but real defense signal.", "why_pass": "Little public information; low confidence.", "team": "2", "moat": "2", "dual_use": "4", "commercial": "3", "regulatory_score": "3", "stage_fit": "5", "source": "https://dealroom.co/news/137976-clearcam-wins-74k-air-force-grant-for-ai-surgical-camera/"}, {"company": "Illuminant Surgical", "tier": "Watchlist", "role": "Device maker", "thesis_fit": "Weak", "connection": "Visualization platform; limited link to simulation or validation.", "layer": "Surgical visualization", "hq": "Unknown", "us_based": "Yes", "stage": "Seed", "raised_usd_m": "8.4", "raised_note": "$8.4M seed (May 2026)", "investors": "Wing 2 Wing Ventures (lead); NSF/NCI/NIA grants", "dual_use_signal": "None found", "regulatory": "Unknown", "inner_logic_relation": "Neutral", "why_fit": "Grant-backed access and visualization platform at seed.", "why_pass": "Weak physical-AI and defense fit.", "team": "3", "moat": "3", "dual_use": "2", "commercial": "3", "regulatory_score": "3", "stage_fit": "3", "source": "https://www.pulse.bot/venture-capital/news/illuminant-surgical-scores-84m-d6a615f1-0fb2-4bf0-840c-209f3c4a1084/"}, {"company": "Physicl", "tier": "Watchlist", "role": "Builds the layer", "thesis_fit": "Moderate", "connection": "A general-purpose simulation tool that could extend into medicine or partner with Inner Logic.", "layer": "Synthetic data for physical AI", "hq": "Paris & San Francisco", "us_based": "Partly", "stage": "Seed", "raised_usd_m": "10", "raised_note": "$10M seed (Nov 2026)", "investors": "Inovia Capital (lead); US Venture Partners", "dual_use_signal": "None found", "regulatory": "Not a device", "inner_logic_relation": "Possible partner", "why_fit": "Generates synthetic 3D training environments for robots; just raised.", "why_pass": "No medical customers yet; horizontal rather than medical.", "team": "3", "moat": "3", "dual_use": "2", "commercial": "3", "regulatory_score": "4", "stage_fit": "5", "source": "https://www.globalstartupsinsights.com/funding/physicl-raises-10-million-in-seed-round-to-build-synthetic-training-data-for-physical-ai/"}, {"company": "Virtual Incision", "tier": "Landscape", "role": "Comp", "thesis_fit": "\u2014", "connection": "Late-stage comp showing defense and space demand for compact surgical robots.", "layer": "Surgical robotics", "hq": "Lincoln, NE", "us_based": "Yes", "stage": "Series C", "raised_usd_m": "146", "raised_note": "~$146M total", "investors": "Endeavour Vision; Baird Capital; Bluestem", "dual_use_signal": "NASA and U.S. Army funding; remote surgery in space", "regulatory": "Authorized for colectomies", "inner_logic_relation": "Complement", "why_fit": "Proof that miniaturized robotics has military and space pull.", "why_pass": "Far past J2's check size; useful as a comp.", "team": "5", "moat": "4", "dual_use": "5", "commercial": "4", "regulatory_score": "5", "stage_fit": "1", "source": "https://www.techbriefs.com/component/content/article/55003-robots-in-the-operating-room"}, {"company": "adsilico", "tier": "Landscape", "role": "Competitor", "thesis_fit": "\u2014", "connection": "Direct competitor to Inner Logic in virtual-patient device testing.", "layer": "Simulation (Inner Logic peer)", "hq": "Leeds, UK", "us_based": "No", "stage": "Series A", "raised_usd_m": "", "raised_note": "\u00a310M Series A (Oct 2026)", "investors": "Undisclosed in source", "dual_use_signal": "None found", "regulatory": "Supports in silico device evidence", "inner_logic_relation": "Competitor: virtual patients for device testing", "why_fit": "Shows investors are funding in silico device testing in parallel.", "why_pass": "Direct competitor to a portfolio company; for landscape only.", "team": "", "moat": "", "dual_use": "", "commercial": "", "regulatory_score": "", "stage_fit": "", "source": "https://tech.eu/2026/10/26/leeds-ai-spinout-adsilico-raises-ps10m-to-test-medical-devices-on-virtual-patients/"}, {"company": "Virtonomy", "tier": "Landscape", "role": "Competitor", "thesis_fit": "\u2014", "connection": "Competitor to Inner Logic in in silico device trials.", "layer": "Simulation (Inner Logic peer)", "hq": "Munich, Germany", "us_based": "No", "stage": "Venture", "raised_usd_m": "", "raised_note": ">\u20ac5M raised", "investors": "Undisclosed in source", "dual_use_signal": "None found", "regulatory": "Digital patient replicas", "inner_logic_relation": "Competitor", "why_fit": "European digital-twin approach to device testing.", "why_pass": "Competitor; for landscape only.", "team": "", "moat": "", "dual_use": "", "commercial": "", "regulatory_score": "", "stage_fit": "", "source": "https://ipfray.com/beyond-a-simple-balance-sheet-figure-how-a-med-tech-start-up-leveraged-its-patents-to-raise-over-e5-million/"}, {"company": "Kitware (ARPA-H AIR testbed)", "tier": "Landscape", "role": "Public testbed", "thesis_fit": "\u2014", "connection": "A free, government-funded simulation testbed: the main strategic risk to Inner Logic in endovascular autonomy.", "layer": "Simulation (Inner Logic peer)", "hq": "Clifton Park, NY", "us_based": "Yes", "stage": "Established company", "raised_usd_m": "", "raised_note": "ARPA-H AIR performer", "investors": "ARPA-H", "dual_use_signal": "Federal program", "regulatory": "Building a public simulation and validation testbed", "inner_logic_relation": "Watch: a public, open testbed could compress Inner Logic's moat", "why_fit": "ARPA-H is funding an open virtual testbed for autonomous endovascular robots, with data and software to be public.", "why_pass": "Not a venture investment; a risk to track for Inner Logic.", "team": "", "moat": "", "dual_use": "", "commercial": "", "regulatory_score": "", "stage_fit": "", "source": "https://evtoday.com/news/arpa-h-funding-will-support-teams-to-advance-robotics-stroke-interventions"}, {"company": "Caresyntax", "tier": "Landscape", "role": "Comp", "thesis_fit": "\u2014", "connection": "Shows the surgical data layer can scale, but it is past J2's stage.", "layer": "Surgical data platform", "hq": "San Francisco, CA", "us_based": "Yes", "stage": "Series C", "raised_usd_m": "180", "raised_note": "$180M Series C extension incl. up to $100M growth debt (Aug 2024)", "investors": "BlackRock Innovation Capital; Optum Ventures; PFM Health Sciences; others", "dual_use_signal": "None found", "regulatory": "Analytics software", "inner_logic_relation": "Context", "why_fit": "Vendor-neutral platform that collects and analyzes surgical data.", "why_pass": "Far past J2's check size.", "team": "", "moat": "", "dual_use": "", "commercial": "", "regulatory_score": "", "stage_fit": "", "source": "https://www.massdevice.com/caresyntax-raises-180m-ai-surgical-software/"}], "programs": [{"program": "DARPA Surgical Competition", "agency": "DARPA", "what": "$3.5M prize competition for autonomous trauma surgery robots (collaboration and independence lanes)", "timing": "Qualification closed fall 2026; up to 10 teams; finals Mar 20-26, 2027", "why_it_matters": "The qualified team list is a ready-made sourcing list of dual-use surgical autonomy companies.", "source": "https://www.darpa.mil/research/challenges/surgical"}, {"program": "MASH (Medics Autonomously Stopping Hemorrhage)", "agency": "DARPA", "what": "~$32.4M, multiple awards, for autonomous systems that stop internal bleeding", "timing": "Proposals closed Nov 2025; 36-month performance", "why_it_matters": "Awardees are startups and labs working on the exact battlefield problem J2 cares about.", "source": "https://research-authority.tau.ac.il/sites/resauth.tau.ac.il/files/DARPA-MASH-PS-25-34.pdf"}, {"program": "AIR (Autonomous Interventions and Robotics)", "agency": "ARPA-H", "what": "Up to $175.3M over 5 years for autonomous stroke robots and microbots", "timing": "Awards announced Aug 2026", "why_it_matters": "Names Magnendo and Kitware; also funds an open simulation testbed relevant to Inner Logic.", "source": "https://evtoday.com/news/arpa-h-funding-will-support-teams-to-advance-robotics-stroke-interventions"}, {"program": "Medical Swarm Robotics STTR", "agency": "DARPA", "what": "Small robot swarms for casualty extraction and life-saving care", "timing": "Proposals closed Jun 2026", "why_it_matters": "Phase I winners, once announced, are early-stage sourcing targets.", "source": "https://www.highergov.com/contract-opportunity/medical-swarm-robotics-for-extraction-and-life-sav-dpa26tz01-nv001-sbir-27e3b/"}, {"program": "MassRobotics Healthcare Catalyst (Cohort 6)", "agency": "MassRobotics", "what": "Boston non-equity accelerator for healthcare robotics", "timing": "Applications close Dec 31, 2026; cohort announced Jan 29, 2027", "why_it_matters": "A Boston pipeline you can watch, and a networking path for you.", "source": "https://www.therobotreport.com/massrobotics-opens-applications-healthcare-robotics-startup-catalyst-program/"}], "landscape": [{"company": "Inner Logic", "role": "J2 portfolio company", "hq": "Baltimore, MD", "stage": "Seed", "capital": "$11.5M seed (Jul 2026), co-led by General Catalyst and Bison Ventures; J2 participated", "what_they_do": "Simulation infrastructure for procedural devices: virtual patients built from real clinical and procedural data, used to design, test and train autonomous surgical systems before cadaver or animal testing.", "vs_inner_logic": "The benchmark for this section.", "source": "https://pulse2.com/inner-logic-raises-11-5-million-seed-round-to-build-simulation-infrastructure-for-procedural-devices/"}, {"company": "adsilico", "role": "Competitor", "hq": "Leeds, UK", "stage": "Series A", "capital": "\u00a310M Series A (Oct 2026)", "what_they_do": "University of Leeds spinout using AI-powered simulation to assess how medical devices, such as implants, perform across diverse virtual patient populations.", "vs_inner_logic": "Closest head-to-head: the same virtual-patient pitch to device makers, and a funding round further along. Its public materials focus on device performance rather than training autonomous systems.", "source": "https://tech.eu/2026/10/26/leeds-ai-spinout-adsilico-raises-ps10m-to-test-medical-devices-on-virtual-patients/"}, {"company": "Virtonomy", "role": "Competitor", "hq": "Munich, Germany", "stage": "Venture", "capital": "More than \u20ac5M raised", "what_they_do": "Builds digital replicas of patients to simulate how medical devices will perform, to replace or complement costly physical trials.", "vs_inner_logic": "Same in silico trial idea for device makers, based in Europe. No sign in the sources of a robotics or autonomy focus.", "source": "https://ipfray.com/beyond-a-simple-balance-sheet-figure-how-a-med-tech-start-up-leveraged-its-patents-to-raise-over-e5-million/"}, {"company": "Kitware", "role": "Public testbed", "hq": "Clifton Park, NY", "stage": "Established company", "capital": "ARPA-H AIR performer (award amount not disclosed)", "what_they_do": "Building a virtual simulation and validation testbed for the four autonomous stroke robots in ARPA-H's AIR program, with its data and software to be made public.", "vs_inner_logic": "Not a startup, but the main strategic risk: a free, government-backed testbed for endovascular autonomy could undercut paid simulation in that niche.", "source": "https://evtoday.com/news/arpa-h-funding-will-support-teams-to-advance-robotics-stroke-interventions"}, {"company": "Virtual Incision", "role": "Late-stage comp", "hq": "Lincoln, NE", "stage": "Series C", "capital": "About $146M raised in total", "what_they_do": "Makes MIRA, a miniaturized surgical robot funded in part by NASA and the U.S. Army, which tested remote surgery tasks on the International Space Station.", "vs_inner_logic": "Not a competitor: a device maker of the kind Inner Logic sells to, and a comp showing defense and space demand for compact surgical robots.", "source": "https://www.techbriefs.com/component/content/article/55003-robots-in-the-operating-room"}]}</script>
+<script>
+(function () {
+  const D = JSON.parse(document.getElementById('data').textContent);
+  const C = D.candidates;
+  const KEYS = ['team','moat','dual_use','commercial','regulatory_score','stage_fit'];
+  C.forEach((c) => { c._total = c.team ? KEYS.reduce((s, k) => s + (+c[k] || 0), 0) : null; });
+  const tierColor = (t) => t === 'Shortlist' ? 'var(--accent)' : t === 'Watchlist' ? 'var(--watch)' : 'var(--land)';
+  const el = (tag, attrs, text) => { const n = document.createElement(tag); if (attrs) Object.entries(attrs).forEach(([k, v]) => n.setAttribute(k, v)); if (text != null) n.textContent = text; return n; };
+  const SVG = 'http://www.w3.org/2000/svg';
+  const sv = (tag, attrs) => { const n = document.createElementNS(SVG, tag); Object.entries(attrs || {}).forEach(([k, v]) => n.setAttribute(k, v)); return n; };
+
+  /* Summary */
+  const count = (f) => C.filter(f).length;
+  const ranked = C.filter((c) => c.tier !== 'Landscape' && c._total != null).sort((a, b) => b._total - a._total);
+  const top = ranked.find((c) => c.tier === 'Shortlist');
+  const lede = document.getElementById('lede');
+  lede.append('There are ', el('b', null, String(count((c) => c.tier === 'Shortlist'))), ' companies on the shortlist out of ', el('b', null, String(ranked.length)), ' ranked, and ', el('b', null, top ? top.company : '—'), ' scores highest among them.');
+  [['Shortlist', count((c) => c.tier === 'Shortlist'), 'Strongest fit with the thesis'], ['Watchlist', count((c) => c.tier === 'Watchlist'), 'Worth tracking; one or more gaps'], ['Landscape', count((c) => c.tier === 'Landscape'), 'Comparisons and Inner Logic peers'], ['Outside the U.S.', count((c) => c.us_based === 'No'), "Fail J2's U.S. mandate as-is"]].forEach(([k, n, note]) => {
+    const t = el('div', { class: 'card tile' }); t.append(el('span', { class: 'k' }, k), el('span', { class: 'n' }, String(n)), el('span', { class: 'cap' }, note)); document.getElementById('tiles').appendChild(t);
+  });
+
+  /* Tooltip helper */
+  function tipFor(box) {
+    const tip = el('div', { class: 'tip' }); tip.hidden = true; box.appendChild(tip);
+    return {
+      show(e, title, lines) { tip.replaceChildren(el('b', null, title), ...lines.map((l) => el('span', null, l))); tip.hidden = false;
+        const r = box.getBoundingClientRect(); let x = e.clientX - r.left + 12, y = e.clientY - r.top + 12;
+        if (x + tip.offsetWidth > r.width) x = Math.max(0, r.width - tip.offsetWidth - 4); tip.style.left = x + 'px'; tip.style.top = y + 'px'; },
+      hide() { tip.hidden = true; }
+    };
+  }
+
+  /* Bar chart */
+  function drawBars() {
+    const box = document.getElementById('bars'); box.replaceChildren();
+    const W = Math.max(300, box.clientWidth), rowH = 26, left = Math.min(200, W * 0.45), right = 30, H = ranked.length * rowH + 6;
+    const svg = sv('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Horizontal bars of total score per company, highest first' });
+    const x = (v) => left + (v / 30) * (W - left - right);
+    const tip = tipFor(box);
+    ranked.forEach((c, i) => {
+      const y = i * rowH + 3;
+      const t = sv('text', { x: left - 8, y: y + rowH / 2, 'text-anchor': 'end', 'dominant-baseline': 'middle', class: 'lab' }); t.textContent = c.company; svg.appendChild(t);
+      const r = sv('rect', { x: left, y: y + 5, height: rowH - 10, width: Math.max(2, x(c._total) - left), rx: 3 }); r.style.fill = tierColor(c.tier);
+      r.addEventListener('pointermove', (e) => tip.show(e, c.company, [c.tier + ' · score ' + c._total + ' / 30', 'Thesis fit: ' + c.thesis_fit])); r.addEventListener('pointerleave', () => tip.hide());
+      svg.appendChild(r);
+      const v = sv('text', { x: x(c._total) + 5, y: y + rowH / 2, 'dominant-baseline': 'middle' }); v.textContent = c._total; svg.appendChild(v);
+    });
+    box.appendChild(svg);
+    svg.querySelectorAll('text.lab').forEach((t) => { let s = t.textContent; while (t.getComputedTextLength() > left - 12 && s.length > 4) { s = s.slice(0, -1); t.textContent = s + '…'; } });
+  }
+
+  /* Scatter */
+  function drawScatter() {
+    const box = document.getElementById('scatter'); box.replaceChildren();
+    const W = Math.max(300, box.clientWidth), H = 300, m = { l: 36, r: 14, t: 14, b: 38 };
+    const svg = sv('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Scatter plot of stage fit against dual-use pull' });
+    const x = (v) => m.l + ((v - 0.5) / 5) * (W - m.l - m.r), y = (v) => H - m.b - ((v - 0.5) / 5) * (H - m.t - m.b);
+    const zone = sv('rect', { x: x(3.5), y: y(5.5), width: x(5.5) - x(3.5), height: y(3.5) - y(5.5) }); zone.style.fill = 'var(--accent-soft)'; svg.appendChild(zone);
+    for (let i = 1; i <= 5; i++) {
+      const gx = sv('line', { x1: x(i), x2: x(i), y1: m.t, y2: H - m.b }); gx.style.stroke = 'var(--line)'; svg.appendChild(gx);
+      const gy = sv('line', { x1: m.l, x2: W - m.r, y1: y(i), y2: y(i) }); gy.style.stroke = 'var(--line)'; svg.appendChild(gy);
+      const tx = sv('text', { x: x(i), y: H - m.b + 16, 'text-anchor': 'middle' }); tx.textContent = i; svg.appendChild(tx);
+      const ty = sv('text', { x: m.l - 10, y: y(i), 'text-anchor': 'end', 'dominant-baseline': 'middle' }); ty.textContent = i; svg.appendChild(ty);
+    }
+    const lx = sv('text', { x: W - m.r, y: H - 4, 'text-anchor': 'end' }); lx.textContent = 'Stage fit →'; svg.appendChild(lx);
+    const ly = sv('text', { x: m.l + 4, y: m.t + 10 }); ly.textContent = '↑ Dual-use pull'; svg.appendChild(ly);
+    const pts = ranked.map((c) => ({ c, s: +c.stage_fit, d: +c.dual_use }));
+    const groups = {}; pts.forEach((p) => { (groups[p.s + '|' + p.d] = groups[p.s + '|' + p.d] || []).push(p); });
+    Object.values(groups).forEach((g) => g.forEach((p, i) => { const a = (i / g.length) * Math.PI * 2, r = g.length > 1 ? 0.2 : 0; p.jx = Math.cos(a) * r; p.jy = Math.sin(a) * r; }));
+    const tip = tipFor(box);
+    pts.forEach((p) => {
+      const rad = 5 + Math.max(0, Math.min(1, (p.c._total - 15) / 11)) * 6;
+      const dot = sv('circle', { cx: x(p.s + p.jx), cy: y(p.d + p.jy), r: rad }); dot.style.fill = tierColor(p.c.tier); dot.style.fillOpacity = .85; dot.style.stroke = 'var(--surface)';
+      dot.addEventListener('pointermove', (e) => tip.show(e, p.c.company, [p.c.tier, 'Dual-use ' + p.d + ' · stage fit ' + p.s, 'Total ' + p.c._total + ' / 30'])); dot.addEventListener('pointerleave', () => tip.hide());
+      svg.appendChild(dot);
+      if (p.c.tier === 'Shortlist' && W > 380) { const t = sv('text', { x: x(p.s + p.jx) + (p.s >= 4 ? -rad - 3 : rad + 3), y: y(p.d + p.jy), 'text-anchor': p.s >= 4 ? 'end' : 'start', 'dominant-baseline': 'middle', class: 'lab' }); t.textContent = p.c.company.split(' ')[0]; svg.appendChild(t); }
+    });
+    box.appendChild(svg);
+  }
+
+  /* Landscape cards */
+  const lsBox = document.getElementById('lsCards');
+  D.landscape.forEach((r) => {
+    const card = el('article', { class: 'ls' + (r.company === 'Inner Logic' ? ' il' : '') });
+    const h = el('h3'); const a = el('a', { href: r.source, target: '_blank', rel: 'noopener' }, r.company); h.appendChild(a);
+    card.append(h, el('div', { class: 'meta' }, r.role + ' · ' + r.hq), el('div', { class: 'meta' }, r.capital), el('div', null, r.what_they_do));
+    if (r.company !== 'Inner Logic') { const vs = el('div', { class: 'vs' }); vs.append(el('b', null, 'Vs. Inner Logic: '), document.createTextNode(r.vs_inner_logic)); card.appendChild(vs); }
+    lsBox.appendChild(card);
+  });
+
+  /* Candidates table */
+  const state = { tier: '', sort: '_total', dir: -1 };
+  const order = { Shortlist: 0, Watchlist: 1, Landscape: 2 };
+  const fitOrder = { 'Strong': 0, 'Moderate': 1, 'Weak to moderate': 2, 'Weak': 3, '—': 4 };
+  function drawTable() {
+    const tb = document.getElementById('tbody'); tb.replaceChildren();
+    const rows = C.filter((c) => !state.tier || c.tier === state.tier).slice().sort((a, b) => {
+      let va, vb;
+      if (state.sort === '_total') { va = a._total ?? -1; vb = b._total ?? -1; }
+      else if (state.sort === 'tier') { va = order[a.tier]; vb = order[b.tier]; }
+      else if (state.sort === 'thesis_fit') { va = -(fitOrder[a.thesis_fit] ?? 9); vb = -(fitOrder[b.thesis_fit] ?? 9); }
+      else { va = (a[state.sort] || '').toLowerCase(); vb = (b[state.sort] || '').toLowerCase(); }
+      return va < vb ? -state.dir : va > vb ? state.dir : 0;
+    });
+    rows.forEach((c) => {
+      const tr = el('tr'); const td = (cls, text) => { const t = el('td', cls ? { class: cls } : null, text); tr.appendChild(t); return t; };
+      const co = td('co'); co.appendChild(el('a', { href: c.source, target: '_blank', rel: 'noopener' }, c.company));
+      const tt = td(); const pill = el('span', { class: 'pill' }, c.tier); pill.style.color = tierColor(c.tier); tt.appendChild(pill);
+      td(null, c.role); td(null, c.thesis_fit); td('num', c._total == null ? '—' : String(c._total)); td('long', c.connection); td(null, c.layer);
+      const hq = td(null, c.hq); if (c.us_based === 'No') { const f = el('span', { class: 'flag', title: 'Outside the U.S.' }, ' ⚑'); hq.appendChild(f); }
+      td(null, c.stage); td('long', c.raised_note); td('long', c.investors); td('long', c.dual_use_signal); td(null, c.regulatory); td('long', c.inner_logic_relation); td('long', c.why_fit); td('long', c.why_pass);
+      tb.appendChild(tr);
+    });
+    document.querySelectorAll('th[data-sort]').forEach((th) => th.setAttribute('aria-sort', th.dataset.sort === state.sort ? (state.dir === 1 ? 'ascending' : 'descending') : 'none'));
+  }
+  document.querySelectorAll('.chip').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('.chip').forEach((x) => x.setAttribute('aria-pressed', x === b ? 'true' : 'false')); state.tier = b.dataset.tier; drawTable();
+  }));
+  document.querySelectorAll('th[data-sort]').forEach((th) => {
+    const go = () => { const k = th.dataset.sort; state.dir = state.sort === k ? -state.dir : (k === '_total' ? -1 : 1); state.sort = k; drawTable(); };
+    th.addEventListener('click', go); th.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+  });
+
+  /* Programs */
+  const pb = document.getElementById('pbody');
+  D.programs.forEach((p) => { const tr = el('tr'); const c0 = el('td', { class: 'co' }); c0.appendChild(el('a', { href: p.source, target: '_blank', rel: 'noopener' }, p.program)); tr.append(c0, el('td', null, p.agency), el('td', { class: 'long' }, p.what), el('td', { class: 'long' }, p.timing), el('td', { class: 'long' }, p.why_it_matters)); pb.appendChild(tr); });
+
+  drawTable(); drawBars(); drawScatter();
+  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { drawBars(); drawScatter(); }, 150); });
+})();
+</script>
+</body></html>
