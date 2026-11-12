@@ -351,12 +351,16 @@ sup.ref a { text-decoration: none; color: var(--accent); }
 .mlegend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
 .mlegend i.now { background: var(--accent); }
 .mlegend i.fut { background: var(--accent-soft); border: 1px solid var(--accent); }
+.btn { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; font: 600 15px var(--body); color: var(--surface); background: var(--accent); border: 1px solid var(--accent); border-radius: var(--r); padding: 10px 18px; text-decoration: none; transition: filter .15s; }
+.btn:hover { filter: brightness(1.1); }
+.btn-sm { font-size: 13px; padding: 6px 12px; white-space: nowrap; flex-shrink: 0; }
 footer.end { border-top: 1px solid var(--line); padding-top: 20px; font-size: 13px; color: var(--muted); }
 </style>
 
 <div class="topbar">
   <div class="topbar-in">
     <div class="brand"><b>Simulation &amp; Validation for Medical Physical AI</b> · Deep dive for J2 Ventures · Jessie Lin</div>
+    <a class="btn btn-sm" href="tracker.html">Sourcing tracker <span aria-hidden="true">&rarr;</span></a>
   </div>
   <div class="progress" id="progress"></div>
 </div>
@@ -754,7 +758,8 @@ footer.end { border-top: 1px solid var(--line); padding-top: 20px; font-size: 13
       <div class="read">
         <div class="eyebrow">06 · Where J2 could invest next</div>
         <h2>Build out the dual-use validation layer, and back the companies that need it</h2>
-        <p>In my search, I found no other U.S. startup doing in silico testing for procedural devices; the closest rivals are in the UK and Germany. J2 already has a stake in the leading U.S. company in medical <strong>simulation training and validation</strong>, Inner Logic, and the rest of the layer is still early. The companies building it lack dual-use pull today because they don't have defense customers yet, which is exactly what J2's network can add. The autonomous-device makers come second: they create the demand and are natural Inner Logic customers. <a href="tracker.html">See the full tracker</a>.</p>
+        <p>In my search, I found no other U.S. startup doing in silico testing for procedural devices; the closest rivals are in the UK and Germany. J2 already has a stake in the leading U.S. company in medical <strong>simulation training and validation</strong>, Inner Logic, and the rest of the layer is still early. The companies building it lack dual-use pull today because they don't have defense customers yet, which is exactly what J2's network can add. The autonomous-device makers come second: they create the demand and are natural Inner Logic customers.</p>
+        <a class="btn" href="tracker.html">Open the full sourcing tracker <span aria-hidden="true">&rarr;</span></a>
       </div>
 
       <div>
